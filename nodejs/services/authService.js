@@ -41,8 +41,8 @@ module.exports = {
                 const payload = { email, passwordHash, displayName };
                 const otpRes = await OTPService.startRegistration(email, payload);
                 // send email via MailService (placeholder credentials must be set)
-                const mailResult = await MailService.sendRegistrationOtp(email, otpRes.otp);
-                return { ok: true, pendingKey: otpRes.key, ttl: otpRes.ttl, mail: mailResult };
+                await MailService.sendRegistrationOtp(email, otpRes.otp);
+                return { ok: true, pendingKey: otpRes.key, ttl: otpRes.ttl };
             } catch (err) {
                 console.error('authService.register error', err);
                 return { ok: false, error: err };
@@ -56,8 +56,17 @@ module.exports = {
             const payload = verify.payload;
             // create user in DB
             const result = await UserModel.createUser(payload.email, payload.passwordHash, payload.displayName);
-            if (result.ok) return { ok: true, insertId: result.insertId };
-            return { ok: false, error: result.error };
+            if (!result.ok) return { ok: false, error: result.error };
+            const user = await UserModel.getUser(payload.email, payload.passwordHash);
+            const userDetails = {
+            displayName: user.displayName,
+            email: user.email,
+            isDisable: !!user.isDisable,
+            user_id: user.user_id,
+            userRole: user.userRole.toUpperCase(),
+            };
+            const token = TokenService.issue(userDetails);
+            return { ok: true, token, user: userDetails,insertId: result.insertId };
         } catch (err) {
             console.error('authService.confirmRegistration error', err);
             return { ok: false, error: err };
