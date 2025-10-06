@@ -1,5 +1,7 @@
 const UserModel = require('../model/UserModel');
 const TokenService = require('./TokenService');
+const OTPService = require('./OTPService');
+const MailService = require('./MailService');
 const crypto = require('crypto');
 
 module.exports = {
@@ -27,13 +29,20 @@ module.exports = {
     },
 
     register: async function ({ email, passwordHash, displayName }) {
-            // store pending registration in redis and send OTP
-            const payload = { email, passwordHash, displayName };
+            // Check if email already exists in DB before starting OTP flow
             try {
-                const otpRes = await require('./OTPService').startRegistration(email, payload);
+                const exists = await UserModel.checkEmailExists(email);
+                if (exists && exists.ok === false) {
+                    // Email already registered
+                    return { ok: false, error: exists.error };
+                }
+
+                // store pending registration in redis and send OTP
+                const payload = { email, passwordHash, displayName };
+                const otpRes = await OTPService.startRegistration(email, payload);
                 // send email via MailService (placeholder credentials must be set)
-                await require('./MailService').sendRegistrationOtp(email, otpRes.otp);
-                return { ok: true, pendingKey: otpRes.key, ttl: otpRes.ttl };
+                const mailResult = await MailService.sendRegistrationOtp(email, otpRes.otp);
+                return { ok: true, pendingKey: otpRes.key, ttl: otpRes.ttl, mail: mailResult };
             } catch (err) {
                 console.error('authService.register error', err);
                 return { ok: false, error: err };
@@ -42,7 +51,7 @@ module.exports = {
 
     confirmRegistration: async function ({ email, otp }) {
         try {
-            const verify = await require('./OTPService').verifyRegistration(email, otp);
+            const verify = await OTPService.verifyRegistration(email, otp);
             if (!verify.ok) return { ok: false, reason: verify.reason };
             const payload = verify.payload;
             // create user in DB

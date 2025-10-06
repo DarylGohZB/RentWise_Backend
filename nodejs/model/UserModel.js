@@ -23,15 +23,36 @@ module.exports = {
     return rows && rows.length ? rows[0] : null;
   }
 ,
+  // Check if an email already exists in the users table.
+  // Returns { ok: false, error: { code: 'EMAIL_EXISTS', message: 'Email already exists' } }
+  // when the email is present, otherwise { ok: true }.
+  checkEmailExists: async function (email) {
+    const p = getPool();
+    const [rows] = await p.execute('SELECT 1 FROM users WHERE email = ? LIMIT 1', [email]);
+    if (rows && rows.length) {
+      return { ok: false, error: { code: 'EMAIL_EXISTS', message: 'Email already exists' } };
+    }
+    return { ok: true };
+  },
 
   createUser: async function (email, passwordHash, displayName) {
     const p = getPool();
+    // Pre-check to provide a friendlier error when email already exists.
     try {
+      // The appropriate checks for email
+      const exists = await module.exports.checkEmailExists(email);
+      if (exists && exists.ok === false) {
+        return { ok: false, error: { code: 'EMAIL_EXISTS', message: 'Email already exists' } };
+      }
+
       const [result] = await p.execute('INSERT INTO users (email, passwordHash, displayName) VALUES (?, ?, ?)', [email, passwordHash, displayName]);
       return { ok: true, insertId: result.insertId };
     } catch (err) {
-      // propagate error to caller for handling duplicate keys etc.
-      console.log(err)
+      // If the insert still fails due to race condition (duplicate key), normalize the error shape
+      if (err && err.code === 'ER_DUP_ENTRY') {
+        return { ok: false, error: { code: 'EMAIL_EXISTS', message: 'Email already exists', raw: err } };
+      }
+      console.log(err);
       return { ok: false, error: err };
     }
   }

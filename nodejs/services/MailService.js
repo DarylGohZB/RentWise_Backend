@@ -23,7 +23,10 @@ module.exports = {
       from: `No Reply <no-reply@${DOMAIN}>`,
       to: toEmail,
       subject: 'Your registration code',
-      text: `Your OTP is: ${otp}. It will expire shortly.`
+      template: "rentwisesg otp template",
+      "h:X-Mailgun-Variables": JSON.stringify({
+        otp_code: otp,
+      }),
     };
     // return promise
     return mgc.messages().send(data);
