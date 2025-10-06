@@ -1,5 +1,5 @@
 ### Setup using Docker Compose
-1. Setup Env variables by running python script.
+1. Setup .env variables by running python script.
 ```
 python3 generate_env.py
 ```

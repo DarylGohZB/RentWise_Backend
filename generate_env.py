@@ -10,7 +10,12 @@ TEMPLATE = textwrap.dedent("""
 #Mysql database
 MYSQL_PASSWORD=
 MYSQL_ROOT_PASSWORD=
-
+# JWT configuration
+# Strong secret required in production
+JWT_SECRET=
+# Token TTL (e.g. 1h, 24h)
+JWT_TTL=1h
+#_________________________
 #Mysql database
 MYSQL_DATABASE=rentwiseDB
 MYSQL_USER=rentuser
