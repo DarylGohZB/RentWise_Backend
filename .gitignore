@@ -1,0 +1,36 @@
+# local database data (mysql) created by docker
+data/
+
+# macOS people :/
+.DS_Store
+
+# Windows 
+Thumbs.db
+ehthumbs.db
+
+# NodeJS things
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Docker stuff
+docker-compose.override.yml
+**/docker-compose.override.yml
+**/docker-compose.*.yml
+*.log
+
+# Environment files obviously
+.env
+.env.local
+.env.*.local
+
+# Other stuff
+coverage/
+.cache/
+dist/
+build/
+tmp/
+temp/
+

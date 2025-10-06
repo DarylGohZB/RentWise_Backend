@@ -1,0 +1,50 @@
+version: '3.8'
+
+services:
+  rentwiseDB:
+    image: mysql:8.0
+    container_name: rentwise-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+    ports:
+      - "3306:3306"
+    volumes:
+      - ./mysql/data:/var/lib/mysql
+      # Place .sql/.sql.gz/.sh files in ./mysql/schema and they will be executed
+      # on container first initialization by the official MySQL image.
+      - ./mysql/schema:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  nodejs:
+    build:
+      context: ./nodejs
+      dockerfile: Dockerfile
+    image: rentwise-node:latest
+    container_name: rentwisesg-nodejs
+    restart: unless-stopped
+    environment:
+      NODE_ENV: ${NODE_ENV}
+      DB_HOST: ${DB_HOST}
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+      DB_NAME: ${DB_NAME}
+    ports:
+      - ${NODEJS_PORT}:${NODEJS_PORT}
+    depends_on:
+      rentwiseDB:
+        condition: service_healthy
+    volumes:
+      - ./nodejs:/usr/src/app
+      - nodejs_node_modules:/usr/src/app/node_modules
+
+volumes:
+  nodejs_node_modules:
+    driver: local
