@@ -27,10 +27,31 @@ module.exports = {
     },
 
     register: async function ({ email, passwordHash, displayName }) {
-        
-        const result = await UserModel.createUser(email, passwordHash, displayName);
-        console.log(result)
-        if (result.ok) return { ok: true, insertId: result.insertId};
-        return { ok: false, error: result.error };
+            // store pending registration in redis and send OTP
+            const payload = { email, passwordHash, displayName };
+            try {
+                const otpRes = await require('./OTPService').startRegistration(email, payload);
+                // send email via MailService (placeholder credentials must be set)
+                await require('./MailService').sendRegistrationOtp(email, otpRes.otp);
+                return { ok: true, pendingKey: otpRes.key, ttl: otpRes.ttl };
+            } catch (err) {
+                console.error('authService.register error', err);
+                return { ok: false, error: err };
+            }
+    },
+
+    confirmRegistration: async function ({ email, otp }) {
+        try {
+            const verify = await require('./OTPService').verifyRegistration(email, otp);
+            if (!verify.ok) return { ok: false, reason: verify.reason };
+            const payload = verify.payload;
+            // create user in DB
+            const result = await UserModel.createUser(payload.email, payload.passwordHash, payload.displayName);
+            if (result.ok) return { ok: true, insertId: result.insertId };
+            return { ok: false, error: result.error };
+        } catch (err) {
+            console.error('authService.confirmRegistration error', err);
+            return { ok: false, error: err };
+        }
     }
 };

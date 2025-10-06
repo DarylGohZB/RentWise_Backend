@@ -36,6 +36,17 @@ services:
       DB_USER: ${DB_USER}
       DB_PASSWORD: ${DB_PASSWORD}
       DB_NAME: ${DB_NAME}
+      # Mailgun (used by MailService)
+      MAILGUN_API_KEY: ${MAILGUN_API_KEY}
+      MAILGUN_DOMAIN: ${MAILGUN_DOMAIN}
+      # Redis connection string for OTP/pending registrations
+      REDIS_URL: ${REDIS_URL}
+      # JWT configuration
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_TTL: ${JWT_TTL}
+      # App port (fallback to 3000 in app.js if not provided)
+      PORT: ${PORT}
+      
     ports:
       - ${NODEJS_PORT}:${NODEJS_PORT}
     depends_on:
@@ -45,6 +56,17 @@ services:
       - ./nodejs:/usr/src/app
       - nodejs_node_modules:/usr/src/app/node_modules
 
+  redis:
+    image: redis:7.0-alpine
+    container_name: rentwise-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+
 volumes:
   nodejs_node_modules:
+    driver: local
+  redis_data:
     driver: local

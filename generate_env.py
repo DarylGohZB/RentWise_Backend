@@ -15,6 +15,11 @@ MYSQL_ROOT_PASSWORD=
 JWT_SECRET=
 # Token TTL (e.g. 1h, 24h)
 JWT_TTL=1h
+# Mailgun (for sending OTPs)
+MAILGUN_API_KEY=
+MAILGUN_DOMAIN=
+# Redis connection (optional override). Default used in code: redis://redis:6379
+REDIS_URL=redis://redis:6379
 #_________________________
 #Mysql database
 MYSQL_DATABASE=rentwiseDB

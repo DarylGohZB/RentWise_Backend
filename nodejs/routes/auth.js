@@ -34,4 +34,14 @@ router.post('/register', async (req, res) => {
   }
 });
 
+router.post('/register/confirm', async (req, res) => {
+  try {
+    const result = await authController.confirmRegistration(req);
+    return res.status(result.status || 200).json(result.body);
+  } catch (err) {
+    console.error('Confirm registration route error', err);
+    return res.status(500).json({ message: 'Internal error' });
+  }
+});
+
 module.exports = router;
