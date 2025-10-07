@@ -24,7 +24,8 @@ REDIS_URL=redis://redis:6379
 #Mysql database
 MYSQL_DATABASE=rentwiseDB
 MYSQL_USER=rentuser
-
+DB_PORT=3307
+                           
 #NodeJS                 
 NODE_ENV=development
 DB_HOST=rentwiseDB

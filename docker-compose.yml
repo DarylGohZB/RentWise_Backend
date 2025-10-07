@@ -9,9 +9,11 @@ services:
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
       MYSQL_DATABASE: ${MYSQL_DATABASE}
       MYSQL_USER: ${MYSQL_USER}
-      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+    command: --port=${DB_PORT:-3306}
     ports:
-      - "3306:3306"
+      # Make mysqld listen on the configured DB_PORT and expose that same port on the host
+      - "${DB_PORT:-3306}:${DB_PORT:-3306}"
+      - "${DB_PORT:-3306}:${DB_PORT:-3306}"
     volumes:
       - ./mysql/data:/var/lib/mysql
       # Place .sql/.sql.gz/.sh files in ./mysql/schema and they will be executed
@@ -32,6 +34,7 @@ services:
     restart: unless-stopped
     environment:
       NODE_ENV: ${NODE_ENV}
+      DB_PORT: ${DB_PORT}
       DB_HOST: ${DB_HOST}
       DB_USER: ${DB_USER}
       DB_PASSWORD: ${DB_PASSWORD}
