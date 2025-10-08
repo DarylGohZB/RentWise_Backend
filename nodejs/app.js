@@ -1,5 +1,6 @@
 const express = require('express');
 const app = express();
+const { runStartupSync } = require('./controller/startupController');
 
 // parse JSON bodies
 app.use(express.json());
@@ -20,6 +21,14 @@ app.use((req, res) => {
 });
 
 const port = process.env.PORT || 3000;
-app.listen(port, () => console.log(`Server listening on port ${port}`));
+app.listen(port, async () => {
+  console.log(`Server listening on port ${port}`);
+  try {
+    const res = await runStartupSync();
+    console.log(`Startup sync completed: ${res.count} records processed.`);
+  } catch (err) {
+    console.error('Startup sync failed:', err);
+  }
+});
 
 module.exports = app;

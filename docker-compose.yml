@@ -5,15 +5,17 @@ services:
     image: mysql:8.0
     container_name: rentwise-mysql
     restart: unless-stopped
+    env_file:
+      - ./.env
     environment:
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
       MYSQL_DATABASE: ${MYSQL_DATABASE}
       MYSQL_USER: ${MYSQL_USER}
-    command: --port=${DB_PORT:-3306}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+    command: --port=3306
     ports:
-      # Make mysqld listen on the configured DB_PORT and expose that same port on the host
-      - "${DB_PORT:-3306}:${DB_PORT:-3306}"
-      - "${DB_PORT:-3306}:${DB_PORT:-3306}"
+      # Expose MySQL on host while container always listens on 3306
+      - "${HOST_DB_PORT:-8000}:3306"
     volumes:
       - ./mysql/data:/var/lib/mysql
       # Place .sql/.sql.gz/.sh files in ./mysql/schema and they will be executed
@@ -32,10 +34,13 @@ services:
     image: rentwise-node:latest
     container_name: rentwisesg-nodejs
     restart: unless-stopped
+    env_file:
+      - ./.env
     environment:
       NODE_ENV: ${NODE_ENV}
-      DB_PORT: ${DB_PORT}
-      DB_HOST: ${DB_HOST}
+      # Force in-network DB settings; app connects to service name on 3306
+      DB_HOST: rentwiseDB
+      DB_PORT: 3306
       DB_USER: ${DB_USER}
       DB_PASSWORD: ${DB_PASSWORD}
       DB_NAME: ${DB_NAME}
@@ -48,10 +53,10 @@ services:
       JWT_SECRET: ${JWT_SECRET}
       JWT_TTL: ${JWT_TTL}
       # App port (fallback to 3000 in app.js if not provided)
-      PORT: ${PORT}
+      PORT: 3000
       
     ports:
-      - ${NODEJS_PORT}:${NODEJS_PORT}
+      - "3000:3000"
     depends_on:
       rentwiseDB:
         condition: service_healthy

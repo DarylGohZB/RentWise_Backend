@@ -5,19 +5,23 @@ const mailgun = require('mailgun-js');
 
 const API_KEY = process.env.MAILGUN_API_KEY;
 const DOMAIN = process.env.MAILGUN_DOMAIN;
-
-if (!API_KEY || !DOMAIN) {
-    throw new Error('MAILGUN_API_KEY and MAILGUN_DOMAIN must be set in environment variables.');
-}
+const IS_CONFIGURED = Boolean(API_KEY && DOMAIN);
 
 let mg;
 function getClient() {
+  if (!IS_CONFIGURED) {
+    throw new Error('Mailgun not configured: set MAILGUN_API_KEY and MAILGUN_DOMAIN');
+  }
   if (!mg) mg = mailgun({ apiKey: API_KEY, domain: DOMAIN });
   return mg;
 }
 
 module.exports = {
   sendRegistrationOtp: async function (toEmail, otp) {
+    if (!IS_CONFIGURED) {
+      console.warn('MailService: MAILGUN env not set; skipping email send');
+      return { skipped: true };
+    }
     const mgc = getClient();
     const data = {
       from: `No Reply <no-reply@${DOMAIN}>`,
@@ -28,7 +32,6 @@ module.exports = {
         otp_code: otp,
       }),
     };
-    // return promise
     return mgc.messages().send(data);
   }
 };
