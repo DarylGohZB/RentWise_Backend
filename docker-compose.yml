@@ -5,19 +5,19 @@ services:
     image: mysql:8.0
     container_name: rentwise-mysql
     restart: unless-stopped
+    env_file:
+      - ./.env
     environment:
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
       MYSQL_DATABASE: ${MYSQL_DATABASE}
       MYSQL_USER: ${MYSQL_USER}
-    command: --port=${DB_PORT:-3306}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+    command: --port=3306
     ports:
-      # Make mysqld listen on the configured DB_PORT and expose that same port on the host
-      - "${DB_PORT:-3306}:${DB_PORT:-3306}"
-      - "${DB_PORT:-3306}:${DB_PORT:-3306}"
+      # Expose MySQL on host while container always listens on 3306
+      - "${DB_PORT:-3306}:3306"
     volumes:
       - ./mysql/data:/var/lib/mysql
-      # Place .sql/.sql.gz/.sh files in ./mysql/schema and they will be executed
-      # on container first initialization by the official MySQL image.
       - ./mysql/schema:/docker-entrypoint-initdb.d:ro
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
@@ -32,26 +32,33 @@ services:
     image: rentwise-node:latest
     container_name: rentwisesg-nodejs
     restart: unless-stopped
+    env_file:
+      - ./.env
     environment:
       NODE_ENV: ${NODE_ENV}
-      DB_PORT: ${DB_PORT}
-      DB_HOST: ${DB_HOST}
+      # Use Docker internal network name
+      DB_HOST: rentwiseDB
+      DB_PORT: 3306
       DB_USER: ${DB_USER}
       DB_PASSWORD: ${DB_PASSWORD}
       DB_NAME: ${DB_NAME}
-      # Mailgun (used by MailService)
-      MAILGUN_API_KEY: ${MAILGUN_API_KEY}
-      MAILGUN_DOMAIN: ${MAILGUN_DOMAIN}
-      # Redis connection string for OTP/pending registrations
+
+      # ✅ Gmail SMTP (current setup)
+      GMAIL_USER: ${GMAIL_USER}
+      GMAIL_PASS: ${GMAIL_PASS}
+
+      # Redis connection string
       REDIS_URL: ${REDIS_URL}
+
       # JWT configuration
       JWT_SECRET: ${JWT_SECRET}
       JWT_TTL: ${JWT_TTL}
+
       # App port (fallback to 3000 in app.js if not provided)
-      PORT: ${PORT}
+      PORT: ${PORT:-3000}
       
     ports:
-      - ${NODEJS_PORT}:${NODEJS_PORT}
+      - "${NODEJS_PORT:-3000}:${PORT:-3000}"
     depends_on:
       rentwiseDB:
         condition: service_healthy
