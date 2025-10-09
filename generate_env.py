@@ -17,7 +17,7 @@ JWT_SECRET=
 JWT_TTL=1h
 # GMAIL SMTP (for sending OTPs)
 GMAIL_USER=rentwisesg.sg@gmail.com
-GMAIL_PASS=NTU12345$
+GMAIL_PASS="rtas lagm xbmy tsjk"
 # Redis connection (optional override). Default used in code: redis://redis:6379
 REDIS_URL=redis://redis:6379
 #_________________________
