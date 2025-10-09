@@ -6,53 +6,35 @@ module.exports.handleTest = async function (req) {
   return true;
 };
 
-// -------------------------
-// Government Data Endpoints
-// -------------------------
-
 module.exports.getGovCount = async function (req) {
-  console.log('[CONTROLLER/SEARCHCONTROLLER] getGovCount called');
   try {
-    const data = await searchService.getGovCount();
-    console.log('[CONTROLLER/SEARCHCONTROLLER] getGovCount result:', data);
-    return data;
+    return await searchService.getGovCount();
   } catch (err) {
-    console.error('[CONTROLLER/SEARCHCONTROLLER] getGovCount failed:', err);
+    console.error('getGovCount failed:', err);
     throw err;
   }
 };
 
 module.exports.getGovSample = async function (req) {
-  const limit = req?.query?.limit ? Number(req.query.limit) : 5;
-  console.log(`[CONTROLLER/SEARCHCONTROLLER] getGovSample called (limit=${limit})`);
-  try {
-    const data = await searchService.getGovSample(limit);
-    console.log('[CONTROLLER/SEARCHCONTROLLER] getGovSample result:', data);
-    return data;
-  } catch (err) {
-    console.error('[CONTROLLER/SEARCHCONTROLLER] getGovSample failed:', err);
-    throw err;
-  }
+  const limit = req && req.query && req.query.limit ? Number(req.query.limit) : 5;
+  return await searchService.getGovSample(limit);
 };
 
 module.exports.searchGovByTown = async function (req) {
-  console.log('[CONTROLLER/SEARCHCONTROLLER] searchGovByTown called with query:', req.query);
   try {
     const filters = {
-      town: req?.query?.town,
-      flatType: req?.query?.flatType,
-      minPrice: req?.query?.minPrice,
-      maxPrice: req?.query?.maxPrice,
-      minAreaSqm: req?.query?.minAreaSqm,
-      maxAreaSqm: req?.query?.maxAreaSqm,
-      limit: req?.query?.limit,
-      offset: req?.query?.offset,
+      town: req && req.query ? req.query.town : undefined,
+      flatType: req && req.query ? req.query.flatType : undefined,
+      minPrice: req && req.query ? req.query.minPrice : undefined,
+      maxPrice: req && req.query ? req.query.maxPrice : undefined,
+      minAreaSqm: req && req.query ? req.query.minAreaSqm : undefined,
+      maxAreaSqm: req && req.query ? req.query.maxAreaSqm : undefined,
+      limit: req && req.query ? req.query.limit : undefined,
+      offset: req && req.query ? req.query.offset : undefined,
     };
-    const data = await searchService.searchGovByTown(filters);
-    console.log('[CONTROLLER/SEARCHCONTROLLER] searchGovByTown result:', data);
-    return data;
+    return await searchService.searchGovByTown(filters);
   } catch (err) {
-    console.error('[CONTROLLER/SEARCHCONTROLLER] searchGovByTown failed:', err);
+    console.error('searchGovByTown failed with query:', req && req.query, 'error:', err);
     throw err;
   }
 };

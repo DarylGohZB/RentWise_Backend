@@ -69,7 +69,7 @@ async function fetchAll(resourceId, pageSize = DEFAULT_PAGE_SIZE, maxRecords) {
       return out.slice(0, maxRecords);
     }
     // progress log
-    console.log(`[SERVICES/GOVTAPISERVICE] fetched ${out.length}/${isFinite(total) ? total : '?'} records (pageSize=${pageSize})`);
+    console.log(`[govtApi] fetched ${out.length}/${isFinite(total) ? total : '?'} records (pageSize=${pageSize})`);
     // brief delay between pages to reduce rate limiting
     await sleep(200);
   }
