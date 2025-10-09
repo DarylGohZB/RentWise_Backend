@@ -2,6 +2,7 @@
 const searchService = require('../services/searchService');
 
 module.exports.handleTest = async function (req) {
+  console.log('[CONTROLLER/SEARCHCONTROLLER] handleTest called');
   return true;
 };
 
@@ -39,13 +40,21 @@ module.exports.searchGovByTown = async function (req) {
 };
 
 module.exports.rankTowns = async function (req) {
-  const filters = {
-    flatType: req && req.query ? req.query.flatType : undefined,
-    minPrice: req && req.query ? req.query.minPrice : undefined,
-    maxPrice: req && req.query ? req.query.maxPrice : undefined,
-    minAreaSqm: req && req.query ? req.query.minAreaSqm : undefined,
-    maxAreaSqm: req && req.query ? req.query.maxAreaSqm : undefined,
-    limit: req && req.query ? req.query.limit : undefined,
-  };
-  return await searchService.rankTowns(filters);
+  console.log('[CONTROLLER/SEARCHCONTROLLER] rankTowns called with query:', req.query);
+  try {
+    const filters = {
+      flatType: req?.query?.flatType,
+      minPrice: req?.query?.minPrice,
+      maxPrice: req?.query?.maxPrice,
+      minAreaSqm: req?.query?.minAreaSqm,
+      maxAreaSqm: req?.query?.maxAreaSqm,
+      limit: req?.query?.limit,
+    };
+    const data = await searchService.rankTowns(filters);
+    console.log('[CONTROLLER/SEARCHCONTROLLER] rankTowns result:', data);
+    return data;
+  } catch (err) {
+    console.error('[CONTROLLER/SEARCHCONTROLLER] rankTowns failed:', err);
+    throw err;
+  }
 };

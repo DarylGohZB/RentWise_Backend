@@ -1,5 +1,11 @@
 CREATE DATABASE rentwiseDB;
 
+# This is for localhost testing without docker. If you run via docker, it will auto create this root user.
+CREATE USER IF NOT EXISTS 'rentuser'@'localhost' IDENTIFIED BY 'password';
+GRANT ALL PRIVILEGES ON rentwiseDB.* TO 'rentuser'@'localhost';
+FLUSH PRIVILEGES;
+#########################################################################
+
 USE rentwiseDB;
 # Default Role: Landlord
 CREATE TABLE IF NOT EXISTS users (

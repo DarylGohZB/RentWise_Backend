@@ -15,9 +15,9 @@ MYSQL_ROOT_PASSWORD=
 JWT_SECRET=
 # Token TTL (e.g. 1h, 24h)
 JWT_TTL=1h
-# Mailgun (for sending OTPs)
-MAILGUN_API_KEY=
-MAILGUN_DOMAIN=
+# GMAIL SMTP (for sending OTPs)
+GMAIL_USER=rentwisesg.sg@gmail.com
+GMAIL_PASS=NTU12345$
 # Redis connection (optional override). Default used in code: redis://redis:6379
 REDIS_URL=redis://redis:6379
 #_________________________
