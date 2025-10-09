@@ -50,7 +50,7 @@ module.exports.recommendTown = async function (req) {
   let townCentroid = null;
   let chosenDistance = null;
   try {
-    const towns = require('../data/towns.json');
+    const towns = require('../dataset/towns.json');
     const t = towns.find(x => String(x.name).toUpperCase() === String(chosenTownName || '').toUpperCase());
     if (t) {
       townCentroid = { lat: t.lat, lng: t.lng };

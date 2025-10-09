@@ -1,4 +1,4 @@
-const towns = require('../data/towns.json');
+const towns = require('../dataset/towns.json');
 
 function toPoint(input) {
   if (!input) return null;
