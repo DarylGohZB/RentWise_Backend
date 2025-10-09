@@ -1,4 +1,4 @@
-const { getCount, getSample, searchByTown, listTownsByScore } = require('../model/GovHouseDataModel');
+const { getCount, getSample, searchByTown, listTownsByScore, getTownStats } = require('../model/GovHouseDataModel');
 
 module.exports = {
 	getGovCount: async function () {
@@ -13,6 +13,9 @@ module.exports = {
 	rankTowns: async function (filters) {
 		return { towns: await listTownsByScore(filters) };
 	},
+  townStats: async function (townName) {
+    return { stats: await getTownStats(townName) };
+  },
 };
 
 

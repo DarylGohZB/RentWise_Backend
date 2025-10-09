@@ -181,6 +181,36 @@ module.exports = {
     const [rows] = await p.execute(sql, [...params, limit]);
     return rows || [];
   },
+  getTownStats: async function (townName) {
+    const p = getPool();
+    await ensureTable();
+    const [rows] = await p.execute(
+      `SELECT COUNT(*) AS listings, ROUND(AVG(monthlyRent)) AS avgMonthlyRent FROM ${TABLE} WHERE town = ?`,
+      [String(townName).toUpperCase()]
+    );
+    const r = (rows && rows[0]) || { listings: 0, avgMonthlyRent: null };
+    return { listings: Number(r.listings) || 0, avgMonthlyRent: r.avgMonthlyRent != null ? Number(r.avgMonthlyRent) : null };
+  },
+  getAllTownStats: async function () {
+    const p = getPool();
+    await ensureTable();
+    const [rows] = await p.execute(`
+      SELECT town,
+             COUNT(*) AS listings,
+             ROUND(AVG(monthlyRent)) AS avgMonthlyRent
+      FROM ${TABLE}
+      WHERE town IS NOT NULL AND town <> ''
+      GROUP BY town
+    `);
+    const map = new Map();
+    for (const r of rows || []) {
+      map.set(String(r.town).toUpperCase(), {
+        listings: Number(r.listings) || 0,
+        avgMonthlyRent: r.avgMonthlyRent != null ? Number(r.avgMonthlyRent) : null,
+      });
+    }
+    return map;
+  },
 };
 
 
