@@ -29,7 +29,7 @@ module.exports = {
       `
     };
 
-    console.log9("[SERVICES/MAILSERVICE] Sending mail...");
+    console.log("[SERVICES/MAILSERVICE] Sending mail...");
     return transporter.sendMail(mailOptions);
   }
 };
