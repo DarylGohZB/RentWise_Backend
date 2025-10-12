@@ -33,3 +33,7 @@ WHERE displayName = 'Admin'
   AND passwordHash = SHA2('SWEAdmin', 256);
 SELECT * FROM users;
 
+# This update is needed else when u try to login, it says invalid credentials for this user...
+UPDATE users
+SET passwordHash = LOWER(SHA2('SWEAdmin', 256))
+WHERE email = 'admin@admin.com';
