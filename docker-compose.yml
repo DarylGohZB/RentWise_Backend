@@ -15,7 +15,7 @@ services:
     command: --port=3306
     ports:
       # Expose MySQL on host while container always listens on 3306
-      - "${HOST_DB_PORT:-3306}:3306"
+      - "${HOST_DB_PORT:-3307}:3306"
     volumes:
       - ./mysql/data:/var/lib/mysql
       - ./mysql/schema:/docker-entrypoint-initdb.d:ro
@@ -64,7 +64,7 @@ services:
         condition: service_healthy
     volumes:
       - ./nodejs:/usr/src/app
-      - nodejs_node_modules:/usr/src/app/node_modules
+      - /usr/src/app/node_modules
 
   redis:
     image: redis:7.0-alpine
@@ -76,7 +76,5 @@ services:
       - redis_data:/data
 
 volumes:
-  nodejs_node_modules:
-    driver: local
   redis_data:
     driver: local

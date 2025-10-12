@@ -26,6 +26,38 @@ VALUES ('admin','admin@admin.com', SHA2('password', 256),'ADMIN');
 # password: password
 
 
+# Property listings table
+CREATE TABLE IF NOT EXISTS listings (
+  listing_id INT AUTO_INCREMENT PRIMARY KEY,
+  landlord_id INT NOT NULL,
+  title VARCHAR(255) NOT NULL,
+  description TEXT,
+  address TEXT NOT NULL,
+  price DECIMAL(10,2) NOT NULL,
+  property_type ENUM('HDB') NOT NULL,
+  bedrooms INT,
+  bathrooms INT,
+  area_sqm DECIMAL(8,2),
+  amenities TEXT,
+  images JSON,
+  availability_date DATE,
+  created_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  status ENUM('active', 'inactive', 'rented') DEFAULT 'active',
+  FOREIGN KEY (landlord_id) REFERENCES users(user_id) ON DELETE CASCADE
+);
+
+# Enquiries table for property enquiries
+CREATE TABLE IF NOT EXISTS enquiries (
+  enquiry_id INT AUTO_INCREMENT PRIMARY KEY,
+  listing_id INT NOT NULL,
+  tenant_name VARCHAR(100) NOT NULL,
+  tenant_email VARCHAR(255) NOT NULL,
+  message TEXT NOT NULL,
+  enquiry_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (listing_id) REFERENCES listings(listing_id) ON DELETE CASCADE
+);
+
 # Checking
 SELECT user_id, displayName
 FROM users
