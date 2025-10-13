@@ -41,7 +41,7 @@ function roleChecker(allowedRoles) {
 
 module.exports = {
   verifyTokenMiddleware,
-  // isRegistered: allow LANDLORD and ADMIN
+  // isRegistered: allow LANDLORD and ADMIN (MIGHT NOT NEED THIS)
   isRegistered: roleChecker(['LANDLORD', 'ADMIN']),
   // isAdmin: allow only ADMIN
   isAdmin: roleChecker(['ADMIN']),
