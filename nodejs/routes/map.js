@@ -15,4 +15,17 @@ router.all('/test', async (req, res) => {
   }
 });
 
+// GET /towndata - Get all towns with coordinates, prices, and colors
+router.get('/towndata', async (req, res) => {
+  console.log('[ROUTES/MAP] /towndata called');
+  try {
+    const result = await mapController.getTownData(req);
+    console.log('[ROUTES/MAP] /towndata result:', result.status || 200);
+    res.status(result.status || 200).json(result.body);
+  } catch (err) {
+    console.error('[ROUTES/MAP] /towndata error:', err);
+    res.status(500).json({ message: 'Internal error' });
+  }
+});
+
 module.exports = router;

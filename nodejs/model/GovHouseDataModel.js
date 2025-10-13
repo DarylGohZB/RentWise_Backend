@@ -271,6 +271,37 @@ module.exports = {
     }
     return map;
   },
+  getAllTownStatsByFlatType: async function () {
+    const p = getPool();
+    await ensureTable();
+    const [rows] = await p.execute(`
+      SELECT 
+        town,
+        flatType,
+        COUNT(*) AS listings,
+        ROUND(AVG(monthlyRent)) AS avgMonthlyRent
+      FROM ${TABLE}
+      WHERE town IS NOT NULL AND town <> '' AND flatType IS NOT NULL
+      GROUP BY town, flatType
+      ORDER BY town, flatType
+    `);
+    
+    // Create a map: town -> { flatType: avgPrice }
+    const map = new Map();
+    for (const r of rows || []) {
+      const townName = String(r.town).toUpperCase();
+      const flatType = String(r.flatType).toUpperCase();
+      const avgPrice = r.avgMonthlyRent != null ? Number(r.avgMonthlyRent) : null;
+      
+      if (!map.has(townName)) {
+        map.set(townName, {});
+      }
+      
+      map.get(townName)[flatType] = avgPrice;
+    }
+    
+    return map;
+  },
 };
 
 
