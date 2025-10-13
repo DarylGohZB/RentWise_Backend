@@ -158,6 +158,66 @@ module.exports = {
     const [rows] = await p.execute(sql, params);
     return rows || [];
   },
+  searchByFilter: async function (filters = {}) {
+    const p = getPool();
+    await ensureTable();
+    
+    // Build WHERE clause conditions
+    const where = [];
+    const params = [];
+    
+    if (filters.town) {
+      where.push('town = ?');
+      params.push(String(filters.town).toUpperCase());
+    }
+    
+    if (filters.flatType) {
+      where.push('flatType = ?');
+      params.push(String(filters.flatType).toUpperCase());
+    }
+    
+    if (filters.startDate) {
+      where.push('rentApprovalDate >= ?');
+      params.push(String(filters.startDate));
+    }
+    
+    if (filters.minPrice != null) {
+      where.push('monthlyRent >= ?');
+      params.push(Number(filters.minPrice));
+    }
+    
+    if (filters.maxPrice != null) {
+      where.push('monthlyRent <= ?');
+      params.push(Number(filters.maxPrice));
+    }
+    
+    // Handle pagination
+    const limit = Math.max(1, Math.min(200, Number.isFinite(Number(filters.limit)) ? Number(filters.limit) : 20));
+    const offset = Math.max(0, Number.isFinite(Number(filters.offset)) ? Number(filters.offset) : 0);
+    
+    // Build SQL query
+    const whereClause = where.length ? `WHERE ${where.join(' AND ')}` : '';
+    const sql = `
+      SELECT 
+        rentApprovalDate, 
+        town, 
+        block, 
+        streetName, 
+        flatType, 
+        monthlyRent 
+      FROM ${TABLE} 
+      ${whereClause} 
+      ORDER BY rentApprovalDate DESC, monthlyRent ASC 
+      LIMIT ${limit} 
+      OFFSET ${offset}
+    `;
+    
+    console.log('[DB] searchByFilter SQL:', sql.replace(/\s+/g, ' ').trim());
+    console.log('[DB] searchByFilter params:', params);
+    
+    const [rows] = await p.execute(sql, params);
+    return rows || [];
+  },
   listTownsByScore: async function (filters = {}) {
     const p = getPool();
     await ensureTable();
