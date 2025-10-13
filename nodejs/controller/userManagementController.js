@@ -166,4 +166,26 @@ module.exports = {
       return { status: 500, body: { message: 'Internal server error' } };
     }
   },
+
+  /**
+   * Get user statistics
+   */
+  getUserStats: async function (req) {
+    try {
+      console.log('[CONTROLLER/USER_MANAGEMENT] getUserStats called');
+
+      const result = await userManagementService.getUserStats();
+
+      if (result.ok) {
+        console.log('[CONTROLLER/USER_MANAGEMENT] getUserStats successful');
+        return { status: 200, body: result.stats };
+      }
+
+      console.error('[CONTROLLER/USER_MANAGEMENT] getUserStats failed:', result.error);
+      return { status: 500, body: { message: 'Failed to retrieve user statistics', error: result.error } };
+    } catch (err) {
+      console.error('[CONTROLLER/USER_MANAGEMENT] getUserStats error:', err);
+      return { status: 500, body: { message: 'Internal server error' } };
+    }
+  },
 };

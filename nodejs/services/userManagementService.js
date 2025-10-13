@@ -56,4 +56,18 @@ module.exports = {
     }
     return result;
   },
+
+  /**
+   * Get user statistics
+   */
+  getUserStats: async function () {
+    console.log('[SERVICES/USER_MANAGEMENT] getUserStats called');
+    const result = await UserModel.getUserStats();
+    if (result.ok) {
+      console.log('[SERVICES/USER_MANAGEMENT] getUserStats successful:', result.stats);
+    } else {
+      console.error('[SERVICES/USER_MANAGEMENT] getUserStats failed:', result.error);
+    }
+    return result;
+  },
 };

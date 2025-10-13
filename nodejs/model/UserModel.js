@@ -230,4 +230,32 @@ module.exports = {
       return { ok: false, error: err };
     }
   },
+
+  getUserStats: async function () {
+    try {
+      console.log('[DB] getUserStats called');
+
+      const [rows] = await pool.execute(`
+        SELECT 
+          COUNT(*) as totalUsers,
+          SUM(CASE WHEN userRole = 'LANDLORD' THEN 1 ELSE 0 END) as landlordCount,
+          SUM(CASE WHEN userRole = 'ADMIN' THEN 1 ELSE 0 END) as adminCount,
+          SUM(CASE WHEN isDisable = 1 THEN 1 ELSE 0 END) as disabledCount
+        FROM users
+      `);
+
+      const stats = {
+        totalUsers: rows[0].totalUsers || 0,
+        landlordCount: rows[0].landlordCount || 0,
+        adminCount: rows[0].adminCount || 0,
+        disabledCount: rows[0].disabledCount || 0,
+      };
+
+      console.log('[DB] getUserStats successful:', stats);
+      return { ok: true, stats };
+    } catch (err) {
+      console.error('[DB] getUserStats error:', err);
+      return { ok: false, error: err };
+    }
+  },
 };

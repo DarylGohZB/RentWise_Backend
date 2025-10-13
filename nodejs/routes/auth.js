@@ -71,4 +71,30 @@ router.get('/verify', async (req, res) => {
   res.json({ valid: true, user: verification.payload });
 });
 
+// POST /refresh - Refresh access token using refresh token
+router.post('/refresh', async (req, res) => {
+  console.log('[ROUTES/AUTH] /refresh called');
+  try {
+    const result = await authController.refreshAccessToken(req);
+    console.log('[ROUTES/AUTH] /refresh result:', result.status || 200);
+    res.status(result.status || 200).json(result.body);
+  } catch (err) {
+    console.error('[ROUTES/AUTH] /refresh error:', err);
+    res.status(500).json({ message: 'Internal error' });
+  }
+});
+
+// POST /logout - Revoke refresh token
+router.post('/logout', async (req, res) => {
+  console.log('[ROUTES/AUTH] /logout called');
+  try {
+    const result = await authController.logout(req);
+    console.log('[ROUTES/AUTH] /logout result:', result.status || 200);
+    res.status(result.status || 200).json(result.body);
+  } catch (err) {
+    console.error('[ROUTES/AUTH] /logout error:', err);
+    res.status(500).json({ message: 'Internal error' });
+  }
+});
+
 module.exports = router;

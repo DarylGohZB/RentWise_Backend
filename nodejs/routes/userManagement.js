@@ -27,6 +27,17 @@ router.get('/users', verifyTokenMiddleware, isAdmin, async (req, res) => {
   }
 });
 
+// GET /api/usermanagement/status - Get user statistics
+router.get('/status', verifyTokenMiddleware, isAdmin, async (req, res) => {
+  try {
+    const result = await userManagementController.getUserStats(req);
+    res.status(result.status).json(result.body);
+  } catch (err) {
+    console.error('[ROUTE/USER_MANAGEMENT] getUserStats error:', err);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+});
+
 // PUT /api/usermanagement/user/:userId - Update user by admin
 router.put('/user/:userId', verifyTokenMiddleware, isAdmin, async (req, res) => {
   try {

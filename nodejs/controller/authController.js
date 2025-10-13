@@ -32,6 +32,8 @@ module.exports = {
         body: {
           message: 'Login successful',
           token: result.token,
+          refreshToken: result.refreshToken,
+          expiresIn: result.expiresIn,
           user: result.user,
         },
       };
@@ -99,6 +101,8 @@ module.exports = {
         body: {
           message: 'Registration confirmed',
           token: result.token,
+          refreshToken: result.refreshToken,
+          expiresIn: result.expiresIn,
           user: result.user,
           insertId: result.insertId,
         },
@@ -128,5 +132,73 @@ module.exports = {
         error: result.error,
       },
     };
+  },
+
+  refreshAccessToken: async function (req) {
+    const { refreshToken } = req.body || {};
+    console.log('[CONTROLLER/AUTHCONTROLLER] refreshAccessToken called');
+
+    if (!refreshToken) {
+      console.warn('[CONTROLLER/AUTHCONTROLLER] refresh failed: missing refreshToken');
+      return { status: 400, body: { message: 'refreshToken required' } };
+    }
+
+    const result = await authService.refreshAccessToken({ refreshToken });
+
+    if (result.ok) {
+      console.log('[CONTROLLER/AUTHCONTROLLER] refresh successful');
+      return {
+        status: 200,
+        body: {
+          message: 'Token refreshed successfully',
+          token: result.token,
+          expiresIn: result.expiresIn,
+          user: result.user,
+        },
+      };
+    }
+
+    if (result.error?.code === 'INVALID_REFRESH_TOKEN') {
+      console.warn('[CONTROLLER/AUTHCONTROLLER] refresh failed: invalid or expired refresh token');
+      return { status: 401, body: { message: 'Invalid or expired refresh token' } };
+    }
+
+    if (result.error?.code === 'USER_NOT_FOUND') {
+      console.warn('[CONTROLLER/AUTHCONTROLLER] refresh failed: user not found');
+      return { status: 404, body: { message: 'User not found' } };
+    }
+
+    if (result.error?.code === 'USER_DISABLED') {
+      console.warn('[CONTROLLER/AUTHCONTROLLER] refresh failed: user is disabled');
+      return { status: 403, body: { message: 'User account is disabled' } };
+    }
+
+    console.error('[CONTROLLER/AUTHCONTROLLER] refresh failed:', result.error);
+    return { status: 500, body: { message: 'Failed to refresh token' } };
+  },
+
+  logout: async function (req) {
+    const { refreshToken } = req.body || {};
+    console.log('[CONTROLLER/AUTHCONTROLLER] logout called');
+
+    if (!refreshToken) {
+      console.warn('[CONTROLLER/AUTHCONTROLLER] logout failed: missing refreshToken');
+      return { status: 400, body: { message: 'refreshToken required' } };
+    }
+
+    const result = await authService.logout({ refreshToken });
+
+    if (result.ok) {
+      console.log('[CONTROLLER/AUTHCONTROLLER] logout successful');
+      return {
+        status: 200,
+        body: {
+          message: 'Logout successful',
+        },
+      };
+    }
+
+    console.warn('[CONTROLLER/AUTHCONTROLLER] logout failed:', result.error);
+    return { status: 400, body: { message: 'Failed to logout' } };
   },
 };
