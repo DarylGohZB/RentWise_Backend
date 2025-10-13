@@ -25,6 +25,7 @@ app.use('/api/enquiry', require('./routes/enquiry'));
 app.use('/api/profile', require('./routes/profile'));
 app.use('/api/adminlisting', require('./routes/adminListing'));
 app.use('/api/apimanagement', require('./routes/apiManagement'));
+app.use('/api/usermanagement', require('./routes/userManagement'));
 app.use('/api/map', require('./routes/map'));
 
 // Generic 404 handler

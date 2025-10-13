@@ -102,4 +102,132 @@ module.exports = {
       return { ok: false, error: err };
     }
   },
+
+  // User Management Methods
+  getAllUsers: async function () {
+    try {
+      const [rows] = await pool.execute(
+        'SELECT user_id, displayName, email, isDisable, userRole FROM users'
+      );
+      return { ok: true, users: rows };
+    } catch (err) {
+      console.error('[DB] getAllUsers error:', err);
+      return { ok: false, error: err };
+    }
+  },
+
+  updateUserByAdmin: async function (user_id, updateData) {
+    try {
+      console.log('[DB] updateUserByAdmin called for user_id:', user_id);
+
+      // Check if new email already exists for a different user
+      if (updateData.email) {
+        const [existingUser] = await pool.execute(
+          'SELECT user_id FROM users WHERE email = ? AND user_id != ? LIMIT 1',
+          [updateData.email, user_id]
+        );
+        
+        if (existingUser.length > 0) {
+          console.warn('[DB] updateUserByAdmin failed: email already exists for another user');
+          return { ok: false, error: { code: 'EMAIL_EXISTS', message: 'Email already exists' } };
+        }
+      }
+
+      // Build dynamic update query
+      const updates = [];
+      const values = [];
+      const allowedFields = ['displayName', 'email', 'userRole', 'isDisable'];
+
+      allowedFields.forEach(field => {
+        if (updateData[field] !== undefined) {
+          updates.push(`${field} = ?`);
+          values.push(updateData[field]);
+        }
+      });
+
+      // If nothing to update
+      if (updates.length === 0) {
+        return { ok: false, error: { message: 'No valid fields to update' } };
+      }
+
+      values.push(user_id);
+
+      const [result] = await pool.execute(
+        `UPDATE users SET ${updates.join(', ')} WHERE user_id = ?`,
+        values
+      );
+
+      if (result.affectedRows === 0) {
+        console.warn('[DB] updateUserByAdmin: no rows affected for user_id:', user_id);
+        return { ok: false, error: { code: 'USER_NOT_FOUND', message: 'User not found' } };
+      }
+
+      console.log('[DB] updateUserByAdmin successful for user_id:', user_id);
+      return { ok: true, affectedRows: result.affectedRows };
+    } catch (err) {
+      if (err.code === 'ER_DUP_ENTRY') {
+        return { ok: false, error: { code: 'EMAIL_EXISTS', message: 'Email already exists' } };
+      }
+      console.error('[DB] updateUserByAdmin error:', err);
+      return { ok: false, error: err };
+    }
+  },
+
+  toggleUserDisable: async function (user_id) {
+    try {
+      console.log('[DB] toggleUserDisable called for user_id:', user_id);
+
+      // First get current isDisable status
+      const [rows] = await pool.execute(
+        'SELECT isDisable FROM users WHERE user_id = ?',
+        [user_id]
+      );
+
+      if (rows.length === 0) {
+        console.warn('[DB] toggleUserDisable: user not found for user_id:', user_id);
+        return { ok: false, error: { code: 'USER_NOT_FOUND', message: 'User not found' } };
+      }
+
+      const currentStatus = rows[0].isDisable;
+      const newStatus = !currentStatus;
+
+      // Update the status
+      const [result] = await pool.execute(
+        'UPDATE users SET isDisable = ? WHERE user_id = ?',
+        [newStatus, user_id]
+      );
+
+      console.log('[DB] toggleUserDisable successful for user_id:', user_id, 'new status:', newStatus);
+      return { ok: true, affectedRows: result.affectedRows, newStatus };
+    } catch (err) {
+      console.error('[DB] toggleUserDisable error:', err);
+      return { ok: false, error: err };
+    }
+  },
+
+  deleteUserById: async function (user_id) {
+    try {
+      console.log('[DB] deleteUserById called for user_id:', user_id);
+
+      // TODO IF NEEDED: Handle cascade delete for related records
+      // Currently CASCADE DELETE is handled by MySQL foreign key constraints
+      // If additional cleanup is needed (e.g., S3 images, external services), add here
+
+      const [result] = await pool.execute(
+        'DELETE FROM users WHERE user_id = ?',
+        [user_id]
+      );
+
+      if (result.affectedRows === 0) {
+        console.warn('[DB] deleteUserById: no rows affected for user_id:', user_id);
+        return { ok: false, error: { code: 'USER_NOT_FOUND', message: 'User not found' } };
+      }
+
+      console.log('[DB] deleteUserById successful for user_id:', user_id);
+      return { ok: true, affectedRows: result.affectedRows };
+    } catch (err) {
+      console.error('[DB] deleteUserById error:', err);
+      return { ok: false, error: err };
+    }
+  },
 };
