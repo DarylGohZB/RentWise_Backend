@@ -9,10 +9,17 @@ function isLatLngString(val) {
   return Number.isFinite(lat) && Number.isFinite(lng);
 }
 
-function fetchJson(url) {
+function fetchJson(url, headers = {}) {
   return new Promise((resolve, reject) => {
+    const options = {
+      headers: {
+        'User-Agent': 'RentWise-Backend/1.0',
+        ...headers,
+      },
+    };
+    
     https
-      .get(url, (res) => {
+      .get(url, options, (res) => {
         let data = '';
         res.on('data', (chunk) => (data += chunk));
         res.on('end', () => {
@@ -28,56 +35,107 @@ function fetchJson(url) {
   });
 }
 
+/**
+ * Geocode an address using OpenStreetMap Nominatim API (free, no API key required)
+ * @param {string} address - The address to geocode
+ * @returns {Promise<{formattedAddress: string, location: {lat: number, lng: number}}>}
+ */
 async function geocodeAddress(address) {
-  const apiKey = process.env.GOOGLE_MAPS_API_KEY || process.env.GOOGLE_API_KEY || process.env.GMAPS_API_KEY;
-  if (!apiKey) {
-    const err = new Error('Google Maps API key not configured');
-    err.status = 500;
+  console.log('[GEOCODING] Geocoding address using Nominatim:', address);
+  
+  // Build Nominatim query URL
+  // Nominatim API: https://nominatim.org/release-docs/latest/api/Search/
+  const url = `https://nominatim.openstreetmap.org/search?` +
+    `q=${encodeURIComponent(address)}&` +
+    `countrycodes=sg&` +  // Restrict to Singapore
+    `format=json&` +
+    `limit=1&` +
+    `addressdetails=1`;
+  
+  try {
+    const results = await fetchJson(url);
+    
+    if (!results || results.length === 0) {
+      console.warn('[GEOCODING] No results found for:', address);
+      const err = new Error(`Failed to geocode: ${address}`);
+      err.status = 400;
+      throw err;
+    }
+    
+    const result = results[0];
+    
+    console.log('[GEOCODING] Geocoding successful:', result.display_name);
+    
+    return {
+      formattedAddress: result.display_name,
+      location: {
+        lat: parseFloat(result.lat),
+        lng: parseFloat(result.lon),
+      },
+    };
+  } catch (err) {
+    console.error('[GEOCODING] Geocoding error:', err.message);
     throw err;
   }
-  const url = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(address)}&components=${encodeURIComponent('country:SG')}&key=${encodeURIComponent(apiKey)}`;
-  const json = await fetchJson(url);
-  if (json.status !== 'OK' || !json.results || !json.results.length) {
-    const err = new Error(`Failed to geocode: ${address}`);
-    err.status = 400;
-    throw err;
-  }
-  const r = json.results[0];
-  return {
-    formattedAddress: r.formatted_address,
-    location: {
-      lat: r.geometry.location.lat,
-      lng: r.geometry.location.lng,
-    },
-  };
 }
 
-function buildStaticMapUrl({ points = [], center = null, recommendedTown = null, zoom = null, size = '640x360' }) {
-  const apiKey = process.env.GOOGLE_MAPS_API_KEY || process.env.GOOGLE_API_KEY || process.env.GMAPS_API_KEY;
-  if (!apiKey) return null;
-  const base = 'https://maps.googleapis.com/maps/api/staticmap';
+/**
+ * Build a static map URL using OpenStreetMap tiles via staticmap service
+ * @param {Object} options - Map configuration
+ * @returns {string|null} Static map URL
+ */
+function buildStaticMapUrl({ points = [], center = null, recommendedTown = null, zoom = 12, size = '640x360' }) {
+  console.log('[STATIC_MAP] Building OpenStreetMap static map URL');
+  
+  // Use staticmap.openstreetmap.de service (free, community-run)
+  const base = 'https://staticmap.openstreetmap.de/staticmap.php';
   const params = [];
-  params.push(`size=${encodeURIComponent(size)}`);
-  if (zoom != null) {
-    params.push(`zoom=${encodeURIComponent(String(zoom))}`);
+  
+  // Parse size
+  const [width, height] = size.split('x').map(Number);
+  params.push(`size=${width}x${height}`);
+  
+  // Set zoom level
+  params.push(`zoom=${zoom}`);
+  
+  // Determine center point
+  let mapCenter = center;
+  if (!mapCenter && points.length > 0) {
+    // Calculate center from points
+    const validPoints = points.filter(p => p);
+    if (validPoints.length > 0) {
+      const avgLat = validPoints.reduce((sum, p) => sum + p.lat, 0) / validPoints.length;
+      const avgLng = validPoints.reduce((sum, p) => sum + p.lng, 0) / validPoints.length;
+      mapCenter = { lat: avgLat, lng: avgLng };
+    }
   }
-  if (center && zoom != null) {
-    params.push(`center=${encodeURIComponent(`${center.lat},${center.lng}`)}`);
+  
+  if (mapCenter) {
+    params.push(`center=${mapCenter.lat},${mapCenter.lng}`);
   }
-  const colors = ['red', 'blue', 'green'];
+  
+  // Add markers for points (red, blue, green)
+  const markerColors = ['red', 'blue', 'green'];
   points.forEach((p, idx) => {
     if (!p) return;
-    const color = colors[idx] || 'gray';
-    params.push(`markers=color:${color}|label:${idx + 1}|${encodeURIComponent(`${p.lat},${p.lng}`)}`);
+    const color = markerColors[idx] || 'gray';
+    params.push(`markers=${p.lat},${p.lng},${color}`);
   });
+  
+  // Add center marker (yellow)
   if (center) {
-    params.push(`markers=color:yellow|label:C|${encodeURIComponent(`${center.lat},${center.lng}`)}`);
+    params.push(`markers=${center.lat},${center.lng},yellow`);
   }
+  
+  // Add recommended town marker (purple/lightblue)
   if (recommendedTown) {
-    params.push(`markers=color:purple|label:T|${encodeURIComponent(`${recommendedTown.lat},${recommendedTown.lng}`)}`);
+    params.push(`markers=${recommendedTown.lat},${recommendedTown.lng},lightblue`);
   }
-  params.push(`key=${encodeURIComponent(apiKey)}`);
-  return `${base}?${params.join('&')}`;
+  
+  const url = `${base}?${params.join('&')}`;
+  console.log('[STATIC_MAP] Generated URL:', url);
+  
+  return url;
 }
 
 module.exports = {
