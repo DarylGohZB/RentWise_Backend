@@ -4,10 +4,11 @@ const { PORT } = require('./config');
 const { runStartupSync } = require('./controller/startupController');
 
 const app = express();
-
+// Additional Orgins allowed
+const allowedOrigins = ['https://rentwisesg.netlify.app'];
 // Enable CORS for local dev environments (update when deployed)
 app.use(cors({
-  origin: ['http://127.0.0.1:5500', 'http://localhost:5500'],
+  origin: [...allowedOrigins, 'http://127.0.0.1:5500', 'http://localhost:5500'],
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
   credentials: true,
 }));
