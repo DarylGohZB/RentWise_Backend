@@ -73,16 +73,5 @@ router.get('/gov/search', async (req, res) => {
   }
 });
 
-router.get('/gov/towns', async (req, res) => {
-  console.log('[ROUTES/SEARCH] /gov/towns called');
-  try {
-    const data = await searchController.rankTowns(req);
-    console.log('[ROUTES/SEARCH] /gov/towns result:', data);
-    res.json(data);
-  } catch (err) {
-    console.error('[ROUTES/SEARCH] /gov/towns error:', err);
-    res.status(500).json({ error: 'Failed to list towns' });
-  }
-});
 
 module.exports = router;

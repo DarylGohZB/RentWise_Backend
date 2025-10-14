@@ -218,29 +218,6 @@ module.exports = {
     const [rows] = await p.execute(sql, params);
     return rows || [];
   },
-  listTownsByScore: async function (filters = {}) {
-    const p = getPool();
-    await ensureTable();
-    const where = [];
-    const params = [];
-    if (filters.flatType) { where.push('flatType = ?'); params.push(String(filters.flatType).toUpperCase()); }
-    if (filters.minPrice != null) { where.push('monthlyRent >= ?'); params.push(Number(filters.minPrice)); }
-    if (filters.maxPrice != null) { where.push('monthlyRent <= ?'); params.push(Number(filters.maxPrice)); }
-    const limit = Math.max(1, Math.min(50, Number(filters.limit) || 10));
-    const sql = `
-      SELECT town,
-             COUNT(*)                       AS listings,
-             ROUND(AVG(monthlyRent))        AS avgMonthlyRent
-      FROM ${TABLE}
-      ${where.length ? 'WHERE ' + where.join(' AND ') : ''}
-      GROUP BY town
-      HAVING town IS NOT NULL AND town <> ''
-      ORDER BY listings DESC
-      LIMIT ?
-    `;
-    const [rows] = await p.execute(sql, [...params, limit]);
-    return rows || [];
-  },
   getTownStats: async function (townName) {
     const p = getPool();
     await ensureTable();

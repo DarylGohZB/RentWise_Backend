@@ -58,18 +58,6 @@ router.get('/gov/search', async (req, res) => {
   }
 });
 
-// Rank towns
-router.get('/gov/towns', async (req, res) => {
-  console.log('[ROUTES/API-MGMT] /gov/towns called');
-  try {
-    const data = await apiManagementController.rankTowns(req);
-    console.log('[ROUTES/API-MGMT] /gov/towns result:', data);
-    res.json(data);
-  } catch (err) {
-    console.error('[ROUTES/API-MGMT] /gov/towns error:', err);
-    res.status(500).json({ error: 'Failed to list towns' });
-  }
-});
 
 // Force sync of government HDB data
 router.post('/gov/sync', async (req, res) => {
@@ -114,14 +102,6 @@ router.get('/gov/search', async (req, res) => {
 	}
 });
 
-router.get('/gov/towns', async (req, res) => {
-	try {
-		const data = await apiManagementController.rankTowns(req);
-		return res.json(data);
-	} catch (err) {
-		return res.status(500).json({ error: 'Failed to list towns' });
-	}
-});
 
 router.post('/gov/sync', async (req, res) => {
 	try {

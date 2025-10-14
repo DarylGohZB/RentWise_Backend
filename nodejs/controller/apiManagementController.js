@@ -63,25 +63,6 @@ module.exports.searchGovByTown = async function (req) {
   }
 };
 
-module.exports.rankTowns = async function (req) {
-  const filters = {
-    flatType: req?.query?.flatType,
-    minPrice: req?.query?.minPrice,
-    maxPrice: req?.query?.maxPrice,
-    minAreaSqm: req?.query?.minAreaSqm,
-    maxAreaSqm: req?.query?.maxAreaSqm,
-    limit: req?.query?.limit,
-  };
-  console.log('[CONTROLLER/API-MGMT] rankTowns called with filters:', filters);
-  try {
-    const towns = await listTownsByScore(filters);
-    console.log(`[CONTROLLER/API-MGMT] rankTowns result: ${towns.length} towns`);
-    return { towns };
-  } catch (err) {
-    console.error('[CONTROLLER/API-MGMT] rankTowns error:', err);
-    throw err;
-  }
-};
 
 module.exports.syncGovData = async function (req) {
   const max = req?.query?.max ? Number(req.query.max) : undefined;

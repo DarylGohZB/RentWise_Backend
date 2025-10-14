@@ -56,9 +56,6 @@ Wait until you see: `Server listening on port 3000`.
 - GET `http://localhost:3000/api/search/gov/search`
   - Query params: `town`, `flatType`, `minPrice`, `maxPrice`, `minAreaSqm`, `maxAreaSqm`, `limit`, `offset`
   - Example: `/api/search/gov/search?town=TAMPINES&flatType=4%20ROOM&minPrice=400000&maxPrice=700000&limit=20&offset=0`
-- GET `http://localhost:3000/api/search/gov/towns`
-  - Ranks towns by listing count, with optional filters above
-  - Example: `/api/search/gov/towns?flatType=4%20ROOM&maxPrice=600000&limit=10`
 
 ### Common issues and fixes
 - Postman can’t connect (ECONNREFUSED):
