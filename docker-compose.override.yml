@@ -2,7 +2,6 @@ version: "3.8"
 
 services:
   rentwiseDB:
-    # disable env_file from base compose
     env_file: []
     environment:
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
@@ -14,13 +13,17 @@ services:
     env_file: []
     environment:
       NODE_ENV: ${NODE_ENV}
-      PORT: ${NODEJS_PORT}              # many Node apps read PORT; we map it to NODEJS_PORT
+      PORT: ${NODEJS_PORT}
       NODEJS_PORT: ${NODEJS_PORT}
+
+      # DB  (inside Docker network)
       DB_HOST: ${DB_HOST}
       DB_PORT: ${DB_PORT}
       DB_USER: ${DB_USER}
       DB_PASSWORD: ${DB_PASSWORD}
       DB_NAME: ${DB_NAME}
+
+      # Auth / Mail / Cache
       JWT_SECRET: ${JWT_SECRET}
       JWT_TTL: ${JWT_TTL}
       GMAIL_USER: ${GMAIL_USER}
