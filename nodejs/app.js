@@ -28,6 +28,10 @@ app.use('/api/adminreview', require('./routes/adminListingReview'));
 app.use('/api/apimanagement', require('./routes/apiManagement'));
 app.use('/api/usermanagement', require('./routes/userManagement'));
 app.use('/api/map', require('./routes/map'));
+app.use('/api/upload', require('./routes/upload'));
+
+// Serve uploaded files statically
+app.use('/uploads', express.static('uploads'));
 
 // Generic 404 handler
 app.use((req, res) => {

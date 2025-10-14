@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const listingController = require('../controller/listingController');
 const AuthMiddleware = require('../middleware/AuthMiddleware');
+const { uploadMultiple, handleUploadError, getFileUrls } = require('../services/uploadService');
 
 // Basic test endpoint
 router.all('/test', async (req, res) => {
@@ -16,10 +17,15 @@ router.all('/test', async (req, res) => {
   }
 });
 
-// Create a new listing (requires authentication)
-router.post('/', AuthMiddleware.verifyTokenMiddleware, async (req, res) => {
+// Create a new listing with file upload (requires authentication)
+router.post('/', AuthMiddleware.verifyTokenMiddleware, uploadMultiple, handleUploadError, async (req, res) => {
   console.log('[ROUTES/LISTING] POST / called');
   try {
+    // Add uploaded image URLs to request body
+    if (req.files && req.files.length > 0) {
+      req.body.images = getFileUrls(req.files);
+    }
+    
     const result = await listingController.createListing(req);
     res.status(result.status).json(result.body);
   } catch (err) {
@@ -64,10 +70,15 @@ router.post('/search', async (req, res) => {
   }
 });
 
-// Update listing (requires authentication)
-router.put('/:listingId', AuthMiddleware.verifyTokenMiddleware, async (req, res) => {
+// Update listing with file upload (requires authentication)
+router.put('/:listingId', AuthMiddleware.verifyTokenMiddleware, uploadMultiple, handleUploadError, async (req, res) => {
   console.log('[ROUTES/LISTING] PUT /:listingId called');
   try {
+    // Add uploaded image URLs to request body
+    if (req.files && req.files.length > 0) {
+      req.body.images = getFileUrls(req.files);
+    }
+    
     const result = await listingController.updateListing(req);
     res.status(result.status).json(result.body);
   } catch (err) {
