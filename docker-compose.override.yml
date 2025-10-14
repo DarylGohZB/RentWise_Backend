@@ -10,7 +10,7 @@ services:
       MYSQL_USER: ${MYSQL_USER}
       MYSQL_PASSWORD: ${MYSQL_PASSWORD}
 
-  rentwiseNode:
+  nodejs:
     env_file: []
     environment:
       NODE_ENV: ${NODE_ENV}
@@ -27,5 +27,5 @@ services:
       GMAIL_PASS: ${GMAIL_PASS}
       REDIS_URL: ${REDIS_URL}
 
-  rentwiseRedis:
+  redis:
     env_file: []
