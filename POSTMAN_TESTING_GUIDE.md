@@ -1,40 +1,29 @@
-# Postman Testing Guide for RentWise Backend
+# RentWise Backend - Postman Testing Guide
 
-## Setup
+## 🚀 Setup Instructions
 
-### 1. Import Environment Variables
-Create a new environment in Postman with these variables:
-- `base_url`: `http://localhost:3000/api`
-- `auth_token`: (leave empty for now, will be filled after login)
-
-### 2. Start Your Backend
-Make sure your backend is running:
+### 1. Start Your Backend
 ```bash
-cd nodejs
-npm start
+docker compose up -d --build
 ```
 
-## Testing Sequence
+### 2. Verify Backend is Running
+- Check logs: `docker compose logs -f nodejs`
+- Look for: `[APP] Server listening on port 3000`
+- Base URL: `http://localhost:3000`
 
-### Step 1: Test Basic Connectivity
+### 3. Postman Collection Setup
+Create a new collection called "RentWise Backend" with base URL: `http://localhost:3000`
 
-#### Test Enquiry Endpoint
-- **Method**: `GET`
-- **URL**: `{{base_url}}/enquiry/test`
-- **Expected Response**: `true`
+---
 
-#### Test Listing Endpoint
-- **Method**: `GET`
-- **URL**: `{{base_url}}/listing/test`
-- **Expected Response**: `true`
+## 🔐 Authentication Endpoints
 
-### Step 2: Authentication (if needed)
-
-#### Login
-- **Method**: `POST`
-- **URL**: `{{base_url}}/auth/login`
+### Login (Get Auth Token)
+- **Method**: POST
+- **URL**: `{{baseURL}}/api/auth/login`
 - **Headers**: `Content-Type: application/json`
-- **Body** (raw JSON):
+- **Body** (JSON):
 ```json
 {
   "email": "admin@admin.com",
@@ -44,8 +33,8 @@ npm start
 - **Expected Response**: 
 ```json
 {
-  "message": "Login successful",
-  "token": "your-jwt-token-here",
+  "success": true,
+  "token": "your_jwt_token_here",
   "user": {
     "user_id": 1,
     "displayName": "admin",
@@ -54,246 +43,348 @@ npm start
   }
 }
 ```
-- **Action**: Copy the token and set it in your environment variable `auth_token`
 
-### Step 3: Create a Test Listing
+### Register New User
+- **Method**: POST
+- **URL**: `{{baseURL}}/api/auth/register`
+- **Headers**: `Content-Type: application/json`
+- **Body** (JSON):
+```json
+{
+  "displayName": "Test Landlord",
+  "email": "landlord@test.com",
+  "password": "password123",
+  "userRole": "LANDLORD"
+}
+```
 
-#### Create Listing
-- **Method**: `POST`
-- **URL**: `{{base_url}}/listing/`
-- **Headers**: 
-  - `Content-Type: application/json`
-  - `Authorization: Bearer {{auth_token}}` (if authentication is enabled)
-- **Body** (raw JSON):
+---
+
+## 🏠 Property Listing Endpoints
+
+### Create New Listing (Triggers Pending Review)
+- **Method**: POST
+- **URL**: `{{baseURL}}/api/listing/create`
+- **Headers**: `Content-Type: application/json`
+- **Body** (JSON):
 ```json
 {
   "landlord_id": 1,
-  "title": "Beautiful 3BR HDB in Orchard",
-  "description": "Spacious 3-bedroom HDB with modern amenities, close to MRT and shopping malls.",
-  "address": "123 Orchard Road, Singapore 238863",
-  "price": 2500.00,
+  "title": "3-Room HDB Flat in Tampines",
+  "description": "Beautiful 3-room HDB flat with modern amenities",
+  "address": "123 Tampines Street 11",
+  "postal_code": "521123",
+  "price": 300,
   "property_type": "HDB",
-  "bedrooms": 3,
-  "bathrooms": 2,
-  "area_sqm": 90.5,
-  "amenities": "Near MRT, Shopping Mall, Park",
-  "images": ["image1.jpg", "image2.jpg"],
+  "rooms": 3,
+  "images": [
+    "https://example.com/image1.jpg",
+    "https://example.com/image2.jpg"
+  ],
   "availability_date": "2024-02-01"
 }
 ```
-- **Expected Response**:
+- **Expected Response** (Price < $500 triggers pending review):
 ```json
 {
   "message": "Listing created successfully",
-  "listingId": 1
+  "listingId": 1,
+  "status": "pending_review",
+  "reviewStatus": "pending",
+  "reviewMessage": "Your property listing is under pending review due to rental price outside normal range (S$500 - S$5000)"
 }
 ```
-- **Action**: Note down the `listingId` for the next test
 
-### Step 4: Test Enquiry System
-
-#### Create Enquiry
-- **Method**: `POST`
-- **URL**: `{{base_url}}/enquiry/`
+### Create Normal Price Listing (Auto-Approved)
+- **Method**: POST
+- **URL**: `{{baseURL}}/api/listing/create`
 - **Headers**: `Content-Type: application/json`
-- **Body** (raw JSON):
+- **Body** (JSON):
 ```json
 {
-  "listing_id": 1,
-  "tenant_name": "John Doe",
-  "tenant_email": "john@example.com",
-  "message": "Hi! I'm interested in viewing this HDB unit. When would be a good time for a viewing? I'm available on weekends."
+  "landlord_id": 1,
+  "title": "4-Room HDB Flat in Jurong",
+  "description": "Spacious 4-room HDB flat",
+  "address": "456 Jurong West Street 42",
+  "postal_code": "640456",
+  "price": 1200,
+  "property_type": "HDB",
+  "rooms": 4,
+  "images": ["https://example.com/image3.jpg"],
+  "availability_date": "2024-02-15"
 }
 ```
+
+### Get Listing by ID
+- **Method**: GET
+- **URL**: `{{baseURL}}/api/listing/1`
 - **Expected Response**:
 ```json
 {
-  "message": "Enquiry submitted successfully",
-  "enquiryId": 1
+  "listing_id": 1,
+  "landlord_id": 1,
+  "title": "3-Room HDB Flat in Tampines",
+  "description": "Beautiful 3-room HDB flat with modern amenities",
+  "address": "123 Tampines Street 11",
+  "postal_code": "521123",
+  "price": 300,
+  "property_type": "HDB",
+  "rooms": 3,
+  "images": ["https://example.com/image1.jpg", "https://example.com/image2.jpg"],
+  "availability_date": "2024-02-01",
+  "status": "pending_review",
+  "review_status": "pending",
+  "created_date": "2024-01-15T10:30:00.000Z"
 }
 ```
 
-### Step 5: Retrieve Data
-
-#### Get Listing by ID
-- **Method**: `GET`
-- **URL**: `{{base_url}}/listing/1`
-- **Expected Response**: Full listing details with landlord information
-
-#### Get Landlord's Enquiries
-- **Method**: `GET`
-- **URL**: `{{base_url}}/enquiry/landlord/1`
-- **Expected Response**: Array of enquiries for the landlord
-
-#### Search Listings
-- **Method**: `POST`
-- **URL**: `{{base_url}}/listing/search`
+### Update Listing
+- **Method**: PUT
+- **URL**: `{{baseURL}}/api/listing/1`
 - **Headers**: `Content-Type: application/json`
-- **Body** (raw JSON):
+- **Body** (JSON):
 ```json
 {
-  "property_type": "HDB",
-  "min_price": 2000,
-  "max_price": 3000,
-  "min_bedrooms": 2,
-  "location": "Orchard"
+  "title": "Updated 3-Room HDB Flat",
+  "price": 1500,
+  "rooms": 3
 }
 ```
 
-## Error Testing
+### Search Listings
+- **Method**: GET
+- **URL**: `{{baseURL}}/api/listing/search`
+- **Query Parameters**:
+  - `min_price`: 1000
+  - `max_price`: 2000
+  - `min_rooms`: 2
+  - `max_rooms`: 4
+  - `property_type`: HDB
+  - `location`: Tampines
+  - `limit`: 10
+  - `offset`: 0
 
-### Test Invalid Property Type
-- **Method**: `POST`
-- **URL**: `{{base_url}}/listing/`
-- **Body**:
+### Get Landlord's Listings
+- **Method**: GET
+- **URL**: `{{baseURL}}/api/listing/landlord/1`
+- **Query Parameters**:
+  - `status`: active (or pending_review, rejected)
+  - `limit`: 10
+  - `offset`: 0
+
+### Delete Listing
+- **Method**: DELETE
+- **URL**: `{{baseURL}}/api/listing/1`
+
+---
+
+## 👨‍💼 Admin Review Endpoints
+
+### Get Pending Reviews
+- **Method**: GET
+- **URL**: `{{baseURL}}/api/adminreview/pending`
+- **Headers**: `Authorization: Bearer {{token}}`
+- **Query Parameters**:
+  - `limit`: 10
+  - `offset`: 0
+
+### Get Specific Listing for Review
+- **Method**: GET
+- **URL**: `{{baseURL}}/api/adminreview/review/1`
+- **Headers**: `Authorization: Bearer {{token}}`
+
+### Approve Listing
+- **Method**: POST
+- **URL**: `{{baseURL}}/api/adminreview/approve/1`
+- **Headers**: 
+  - `Authorization: Bearer {{token}}`
+  - `Content-Type: application/json`
+- **Body** (JSON):
 ```json
 {
+  "review_notes": "Listing approved - price is reasonable for the area"
+}
+```
+
+### Reject Listing
+- **Method**: POST
+- **URL**: `{{baseURL}}/api/adminreview/reject/1`
+- **Headers**: 
+  - `Authorization: Bearer {{token}}`
+  - `Content-Type: application/json`
+- **Body** (JSON):
+```json
+{
+  "review_notes": "Price too low - please provide justification or increase price"
+}
+```
+
+### Request More Information
+- **Method**: POST
+- **URL**: `{{baseURL}}/api/adminreview/request-info/1`
+- **Headers**: 
+  - `Authorization: Bearer {{token}}`
+  - `Content-Type: application/json`
+- **Body** (JSON):
+```json
+{
+  "review_notes": "Please provide more details about the property condition and nearby amenities"
+}
+```
+
+### Get Review Statistics
+- **Method**: GET
+- **URL**: `{{baseURL}}/api/adminreview/stats`
+- **Headers**: `Authorization: Bearer {{token}}`
+
+---
+
+## 🏛️ Government Data Endpoints
+
+### Get Government Data Count
+- **Method**: GET
+- **URL**: `{{baseURL}}/api/search/gov/count`
+
+### Get Sample Government Data
+- **Method**: GET
+- **URL**: `{{baseURL}}/api/search/gov/sample`
+- **Query Parameters**:
+  - `limit`: 5
+
+### Search Government Data
+- **Method**: GET
+- **URL**: `{{baseURL}}/api/search/gov/search`
+- **Query Parameters**:
+  - `town`: TAMPINES
+  - `flatType`: 4 ROOM
+  - `minPrice`: 400000
+  - `maxPrice`: 700000
+  - `limit`: 20
+  - `offset`: 0
+
+### Sync Government Data
+- **Method**: POST
+- **URL**: `{{baseURL}}/api/apimanagement/gov/sync`
+
+---
+
+## 🧪 Test Scenarios
+
+### Scenario 1: Create Listing with Low Price (Triggers Review)
+1. Create listing with `price: 300`
+2. Verify response shows `status: "pending_review"`
+3. Check admin panel shows pending review
+
+### Scenario 2: Create Listing with High Price (Triggers Review)
+1. Create listing with `price: 6000`
+2. Verify response shows `status: "pending_review"`
+3. Check admin panel shows pending review
+
+### Scenario 3: Create Normal Price Listing (Auto-Approved)
+1. Create listing with `price: 1200`
+2. Verify response shows `status: "active"`
+
+### Scenario 4: Admin Review Workflow
+1. Login as admin
+2. Get pending reviews
+3. Approve/reject listings
+4. Verify status changes
+
+### Scenario 5: Validation Testing
+1. Try creating listing without required fields
+2. Try invalid email format
+3. Try invalid postal code
+4. Try more than 5 images
+5. Try negative price
+
+---
+
+## 🔧 Postman Environment Variables
+
+Create environment variables in Postman:
+- `baseURL`: `http://localhost:3000`
+- `token`: (set after login)
+- `listingId`: (set after creating listing)
+- `landlordId`: `1`
+
+---
+
+## 📝 Common Test Cases
+
+### Validation Errors
+```json
+// Missing required fields
+{
   "landlord_id": 1,
-  "title": "Test Listing",
+  "title": "Test"
+  // Missing: address, postal_code, price, property_type
+}
+
+// Invalid email
+{
+  "email": "invalid-email"
+}
+
+// Invalid postal code
+{
+  "postal_code": "12345"  // Should be 6 digits
+}
+
+// Too many images
+{
+  "images": [
+    "url1", "url2", "url3", "url4", "url5", "url6"  // Max 5 allowed
+  ]
+}
+
+// Negative price
+{
+  "price": -100
+}
+```
+
+### Success Cases
+```json
+// Valid listing
+{
+  "landlord_id": 1,
+  "title": "Test Property",
   "address": "123 Test Street",
-  "price": 2000,
-  "property_type": "Condo"
-}
-```
-- **Expected Response**: `400 Bad Request` with error message
-
-### Test Missing Required Fields
-- **Method**: `POST`
-- **URL**: `{{base_url}}/enquiry/`
-- **Body**:
-```json
-{
-  "listing_id": 1,
-  "tenant_name": "John Doe"
-}
-```
-- **Expected Response**: `400 Bad Request` with validation error
-
-### Test Non-existent Listing
-- **Method**: `POST`
-- **URL**: `{{base_url}}/enquiry/`
-- **Body**:
-```json
-{
-  "listing_id": 999,
-  "tenant_name": "John Doe",
-  "tenant_email": "john@example.com",
-  "message": "Test message"
-}
-```
-- **Expected Response**: `404 Not Found`
-
-## Collection Setup
-
-### Create a Postman Collection
-1. Create a new collection called "RentWise Backend"
-2. Add all the above requests to the collection
-3. Set up environment variables
-4. Add tests to verify responses
-
-### Sample Test Scripts
-
-#### For Successful Enquiry Creation
-```javascript
-pm.test("Status code is 201", function () {
-    pm.response.to.have.status(201);
-});
-
-pm.test("Response has enquiryId", function () {
-    var jsonData = pm.response.json();
-    pm.expect(jsonData.enquiryId).to.exist;
-});
-
-pm.test("Response message is correct", function () {
-    var jsonData = pm.response.json();
-    pm.expect(jsonData.message).to.eql("Enquiry submitted successfully");
-});
-```
-
-#### For Successful Listing Creation
-```javascript
-pm.test("Status code is 201", function () {
-    pm.response.to.have.status(201);
-});
-
-pm.test("Response has listingId", function () {
-    var jsonData = pm.response.json();
-    pm.expect(jsonData.listingId).to.exist;
-});
-
-pm.test("Response message is correct", function () {
-    var jsonData = pm.response.json();
-    pm.expect(jsonData.message).to.eql("Listing created successfully");
-});
-```
-
-## Quick Test Checklist
-
-- [ ] Backend server is running
-- [ ] Test endpoints return `true`
-- [ ] Can create a listing successfully
-- [ ] Can create an enquiry for the listing
-- [ ] Can retrieve the listing by ID
-- [ ] Can get landlord's enquiries
-- [ ] Error handling works for invalid data
-- [ ] Email notifications are sent (check your email)
-
-## Troubleshooting
-
-### Common Issues
-
-1. **Connection Refused**
-   - Make sure your backend server is running on port 3000
-   - Check if the URL is correct: `http://localhost:3000/api`
-
-2. **404 Not Found**
-   - Verify the endpoint URLs are correct
-   - Check if the routes are properly set up in your app
-
-3. **500 Internal Server Error**
-   - Check your server logs for detailed error messages
-   - Verify database connection is working
-
-4. **Email Not Working**
-   - Check your Gmail credentials in environment variables
-   - Verify Gmail app password is set up correctly
-
-### Database Setup
-Make sure your MySQL database is running and the tables are created:
-```sql
--- Run this in your MySQL client
-USE rentwiseDB;
-SHOW TABLES;
--- Should show: users, listings, enquiries
-```
-
-## Sample Data for Testing
-
-### Test Listings
-```json
-{
-  "landlord_id": 1,
-  "title": "Cozy 2BR HDB in Tampines",
-  "description": "Well-maintained 2-bedroom HDB unit near Tampines MRT",
-  "address": "456 Tampines Street 42, Singapore 520456",
-  "price": 1800.00,
+  "postal_code": "123456",
+  "price": 1200,
   "property_type": "HDB",
-  "bedrooms": 2,
-  "bathrooms": 1,
-  "area_sqm": 70.0,
-  "amenities": "Near MRT, Market, School",
-  "availability_date": "2024-03-01"
+  "rooms": 3,
+  "images": ["https://example.com/image.jpg"]
 }
 ```
 
-### Test Enquiries
-```json
-{
-  "listing_id": 1,
-  "tenant_name": "Sarah Lee",
-  "tenant_email": "sarah@example.com",
-  "message": "Hello! I'm interested in this property. Could you please provide more details about the lease terms and when I can arrange a viewing?"
-}
-```
+---
 
-This guide should help you thoroughly test your RentWise backend APIs using Postman!
+## 🚨 Troubleshooting
+
+### Connection Issues
+- Ensure Docker containers are running: `docker compose ps`
+- Check backend logs: `docker compose logs nodejs`
+- Verify port 3000 is accessible
+
+### Authentication Issues
+- Use admin credentials: `admin@admin.com` / `password`
+- Include `Authorization: Bearer {{token}}` header for protected endpoints
+
+### Database Issues
+- Check MySQL is running: `docker compose logs rentwiseDB`
+- Verify data exists: Use government data endpoints first
+
+---
+
+## 📊 Expected Response Codes
+
+- **200**: Success
+- **201**: Created successfully
+- **400**: Validation error / Bad request
+- **401**: Unauthorized (missing/invalid token)
+- **403**: Forbidden (insufficient permissions)
+- **404**: Not found
+- **500**: Internal server error
+
+Happy testing! 🎉

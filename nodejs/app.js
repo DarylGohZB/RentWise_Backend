@@ -24,6 +24,7 @@ app.use('/api/search', require('./routes/search'));
 app.use('/api/enquiry', require('./routes/enquiry'));
 app.use('/api/profile', require('./routes/profile'));
 app.use('/api/adminlisting', require('./routes/adminListing'));
+app.use('/api/adminreview', require('./routes/adminListingReview'));
 app.use('/api/apimanagement', require('./routes/apiManagement'));
 app.use('/api/usermanagement', require('./routes/userManagement'));
 app.use('/api/map', require('./routes/map'));
@@ -41,7 +42,7 @@ app.listen(port, async () => {
   console.log(`[APP] Server listening on port ${port}`);
   try {
     const res = await runStartupSync();
-    console.log(`[APP] Startup sync completed: ${res.count} records processed.`);
+    console.log(`[APP] Startup sync completed: ${res.inserted} records processed.`);
   } catch (err) {
     console.error('[APP] Startup sync failed:', err);
   }

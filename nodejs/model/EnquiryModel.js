@@ -2,6 +2,25 @@ const pool = require('../services/db');
 
 module.exports = {
   /**
+   * Ensure enquiries table exists with proper schema
+   */
+  ensureTable: async function () {
+    const p = pool;
+    await p.execute(`
+      CREATE TABLE IF NOT EXISTS enquiries (
+        enquiry_id INT AUTO_INCREMENT PRIMARY KEY,
+        listing_id INT NOT NULL,
+        tenant_name VARCHAR(100) NOT NULL,
+        tenant_email VARCHAR(255) NOT NULL,
+        message TEXT NOT NULL,
+        enquiry_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (listing_id) REFERENCES listings(listing_id) ON DELETE CASCADE
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+    `);
+    
+    console.log('[DB] Enquiries table ensured');
+  },
+  /**
    * Create a new enquiry
    */
   createEnquiry: async function (enquiryData) {

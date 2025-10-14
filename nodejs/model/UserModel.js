@@ -1,6 +1,32 @@
 const pool = require('../services/db');
 
 module.exports = {
+  /**
+   * Ensure users table exists with proper schema
+   */
+  ensureTable: async function () {
+    const p = pool;
+    await p.execute(`
+      CREATE TABLE IF NOT EXISTS users (
+        user_id INT AUTO_INCREMENT PRIMARY KEY,
+        displayName VARCHAR(50) NOT NULL,
+        email VARCHAR(255) UNIQUE NOT NULL,
+        passwordHash CHAR(64) NOT NULL,
+        isDisable BOOLEAN DEFAULT FALSE,
+        userRole CHAR(64) NOT NULL DEFAULT 'LANDLORD',
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+    `);
+    
+    // Insert default admin user if not exists
+    await p.execute(`
+      INSERT IGNORE INTO users (displayName, email, passwordHash, userRole)
+      VALUES ('admin', 'admin@admin.com', SHA2('password', 256), 'ADMIN');
+    `);
+    
+    console.log('[DB] Users table ensured');
+  },
   getUser: async function (email, hash) {
     const [rows] = await pool.execute(
       'SELECT user_id, displayName, email, isDisable, userRole FROM users WHERE email = ? AND passwordHash = ?',

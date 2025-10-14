@@ -1,15 +1,27 @@
 const { ensureTable, upsertRecords } = require('../model/GovHouseDataModel');
 const { fetchPage } = require('../services/govtApiService');
+const UserModel = require('../model/UserModel');
+const ListingModel = require('../model/ListingModel');
+const EnquiryModel = require('../model/EnquiryModel');
 
 const DATASET_ID = 'd_c9f57187485a850908655db0e8cfe651';
 
 module.exports = {
   /**
-   * Ensures the target table exists, then fetches all records from the
+   * Ensures all tables exist, then fetches all records from the
    * government dataset and upserts them into MySQL.
    */
   runStartupSync: async function () {
-    await ensureTable();
+    console.log('[STARTUP] Ensuring all database tables exist...');
+    
+    // Ensure all tables exist
+    await UserModel.ensureTable();
+    await ListingModel.ensureTable();
+    await EnquiryModel.ensureTable();
+    await ensureTable(); // Government data table
+    
+    console.log('[STARTUP] All tables ensured, starting government data sync...');
+    
     const pageSize = 50;
     let offset = 0;
     let total = Infinity;

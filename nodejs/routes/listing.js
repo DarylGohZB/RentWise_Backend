@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const listingController = require('../controller/listingController');
+const AuthMiddleware = require('../middleware/AuthMiddleware');
 
 // Basic test endpoint
 router.all('/test', async (req, res) => {
@@ -15,8 +16,8 @@ router.all('/test', async (req, res) => {
   }
 });
 
-// Create a new listing
-router.post('/', async (req, res) => {
+// Create a new listing (requires authentication)
+router.post('/', AuthMiddleware.verifyTokenMiddleware, async (req, res) => {
   console.log('[ROUTES/LISTING] POST / called');
   try {
     const result = await listingController.createListing(req);
@@ -63,8 +64,8 @@ router.post('/search', async (req, res) => {
   }
 });
 
-// Update listing
-router.put('/:listingId', async (req, res) => {
+// Update listing (requires authentication)
+router.put('/:listingId', AuthMiddleware.verifyTokenMiddleware, async (req, res) => {
   console.log('[ROUTES/LISTING] PUT /:listingId called');
   try {
     const result = await listingController.updateListing(req);
@@ -75,8 +76,8 @@ router.put('/:listingId', async (req, res) => {
   }
 });
 
-// Delete listing
-router.delete('/:listingId', async (req, res) => {
+// Delete listing (requires authentication)
+router.delete('/:listingId', AuthMiddleware.verifyTokenMiddleware, async (req, res) => {
   console.log('[ROUTES/LISTING] DELETE /:listingId called');
   try {
     const result = await listingController.deleteListing(req);

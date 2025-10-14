@@ -1,4 +1,4 @@
-CREATE DATABASE rentwiseDB;
+# CREATE DATABASE rentwiseDB;
 
 # This is for localhost testing without docker. If you run via docker, it will auto create this root user.
 CREATE USER IF NOT EXISTS 'rentuser'@'localhost' IDENTIFIED BY 'password';
@@ -20,9 +20,9 @@ CREATE TABLE IF NOT EXISTS users (
 
 # Adding default admin user
 INSERT INTO users (displayName, email, passwordHash, userRole)
-VALUES ('admin','admin@admin.com', SHA2('password', 256),'ADMIN');
+VALUES ('admin','admin@gmail.com', SHA2('password', 256),'ADMIN');
 # default user for testing purposes
-# login: admin@admin.com
+# login: admin@gmail.com
 # password: password
 
 
@@ -33,17 +33,17 @@ CREATE TABLE IF NOT EXISTS listings (
   title VARCHAR(255) NOT NULL,
   description TEXT,
   address TEXT NOT NULL,
+  postal_code VARCHAR(10),
   price DECIMAL(10,2) NOT NULL,
   property_type ENUM('HDB') NOT NULL,
-  bedrooms INT,
-  bathrooms INT,
-  area_sqm DECIMAL(8,2),
-  amenities TEXT,
+  rooms INT,
   images JSON,
   availability_date DATE,
   created_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  status ENUM('active', 'inactive', 'rented') DEFAULT 'active',
+  status ENUM('active', 'inactive', 'rented', 'pending_review', 'rejected') DEFAULT 'active',
+  review_status ENUM('pending', 'approved', 'rejected', 'needs_info') DEFAULT 'pending',
+  review_notes TEXT,
   FOREIGN KEY (landlord_id) REFERENCES users(user_id) ON DELETE CASCADE
 );
 

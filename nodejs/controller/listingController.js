@@ -1,4 +1,5 @@
 const ListingModel = require('../model/ListingModel');
+const ListingValidationService = require('../services/ListingValidationService');
 
 module.exports = {
   // Test endpoint
@@ -7,76 +8,42 @@ module.exports = {
   },
 
   /**
-   * Create a new listing
+   * Create a new listing with validation and review status
    */
   createListing: async function (req) {
-    const {
-      landlord_id,
-      title,
-      description,
-      address,
-      price,
-      property_type,
-      bedrooms,
-      bathrooms,
-      area_sqm,
-      amenities,
-      images,
-      availability_date
-    } = req.body || {};
-
-    console.log('[CONTROLLER/LISTING] createListing attempt by landlord:', landlord_id);
-
-    // Validation
-    if (!landlord_id || !title || !address || !price || !property_type) {
-      console.warn('[CONTROLLER/LISTING] createListing failed: missing required fields');
-      return { status: 400, body: { message: 'landlord_id, title, address, price, and property_type are required' } };
-    }
-
-    // Price validation
-    if (isNaN(price) || price <= 0) {
-      console.warn('[CONTROLLER/LISTING] createListing failed: invalid price');
-      return { status: 400, body: { message: 'Price must be a positive number' } };
-    }
-
-    // Property type validation
-    const validPropertyTypes = ['HDB'];
-    if (!validPropertyTypes.includes(property_type)) {
-      console.warn('[CONTROLLER/LISTING] createListing failed: invalid property type');
-      return { status: 400, body: { message: 'Invalid property type. Must be: HDB' } };
-    }
+    const listingData = req.body || {};
+    
+    // Use authenticated user's ID as landlord_id
+    const landlordId = req.user.user_id;
+    listingData.landlord_id = landlordId;
+    
+    console.log('[CONTROLLER/LISTING] createListing attempt by authenticated user:', landlordId);
 
     try {
-      const listingData = {
-        landlord_id,
-        title,
-        description,
-        address,
-        price,
-        property_type,
-        bedrooms,
-        bathrooms,
-        area_sqm,
-        amenities,
-        images,
-        availability_date
-      };
-
       const result = await ListingModel.createListing(listingData);
-
-      if (result.ok) {
-        console.log('[CONTROLLER/LISTING] createListing successful:', result.listingId);
-        return {
-          status: 201,
-          body: {
-            message: 'Listing created successfully',
-            listingId: result.listingId
-          }
+      
+      if (!result.ok) {
+        console.warn('[CONTROLLER/LISTING] createListing failed:', result.error);
+        return { 
+          status: 400, 
+          body: { 
+            message: result.error,
+            details: result.details || []
+          } 
         };
       }
 
-      console.error('[CONTROLLER/LISTING] createListing failed:', result.error);
-      return { status: 500, body: { message: 'Failed to create listing', error: result.error } };
+      console.log('[CONTROLLER/LISTING] createListing success:', result.listingId);
+      return {
+        status: 201,
+        body: {
+          message: 'Listing created successfully',
+          listingId: result.listingId,
+          status: result.status,
+          reviewStatus: result.reviewStatus,
+          reviewMessage: result.message
+        }
+      };
     } catch (err) {
       console.error('[CONTROLLER/LISTING] createListing error:', err);
       return { status: 500, body: { message: 'Internal server error' } };
@@ -155,11 +122,12 @@ module.exports = {
   },
 
   /**
-   * Update listing
+   * Update listing with validation and review status
    */
   updateListing: async function (req) {
     const { listingId } = req.params;
     const updateData = req.body || {};
+    const userId = req.user?.user_id; // Get from authenticated user
 
     if (!listingId) {
       return { status: 400, body: { message: 'listingId is required' } };
@@ -169,33 +137,41 @@ module.exports = {
       return { status: 400, body: { message: 'No fields to update' } };
     }
 
-    // Validate property type if provided
-    if (updateData.property_type) {
-      const validPropertyTypes = ['HDB'];
-      if (!validPropertyTypes.includes(updateData.property_type)) {
-        return { status: 400, body: { message: 'Invalid property type. Must be: HDB' } };
-      }
-    }
-
-    // Validate price if provided
-    if (updateData.price && (isNaN(updateData.price) || updateData.price <= 0)) {
-      return { status: 400, body: { message: 'Price must be a positive number' } };
-    }
-
     try {
-      const result = await ListingModel.updateListing(listingId, updateData);
-
-      if (result.ok) {
-        console.log('[CONTROLLER/LISTING] updateListing successful:', listingId);
-        return { status: 200, body: { message: 'Listing updated successfully' } };
-      }
-
-      if (result.error === 'Listing not found') {
+      // Check if listing exists and verify ownership (unless user is admin)
+      const listing = await ListingModel.getListingById(listingId);
+      if (!listing) {
         return { status: 404, body: { message: 'Listing not found' } };
       }
 
-      console.error('[CONTROLLER/LISTING] updateListing failed:', result.error);
-      return { status: 500, body: { message: 'Failed to update listing', error: result.error } };
+      // Check ownership (unless user is admin)
+      if (req.user.userRole !== 'ADMIN' && listing.landlord_id !== userId) {
+        return { status: 403, body: { message: 'You can only update your own listings' } };
+      }
+
+      const result = await ListingModel.updateListing(listingId, updateData);
+
+      if (!result.ok) {
+        console.error('[CONTROLLER/LISTING] updateListing failed:', result.error);
+        return { 
+          status: 400, 
+          body: { 
+            message: result.error,
+            details: result.details || []
+          } 
+        };
+      }
+
+      console.log('[CONTROLLER/LISTING] updateListing successful:', listingId);
+      return { 
+        status: 200, 
+        body: { 
+          message: 'Listing updated successfully',
+          status: result.status,
+          reviewStatus: result.reviewStatus,
+          reviewMessage: result.message
+        } 
+      };
     } catch (err) {
       console.error('[CONTROLLER/LISTING] updateListing error:', err);
       return { status: 500, body: { message: 'Internal server error' } };
@@ -203,29 +179,48 @@ module.exports = {
   },
 
   /**
-   * Delete listing
+   * Delete listing (with ownership verification)
    */
   deleteListing: async function (req) {
     const { listingId } = req.params;
+    const landlordId = req.user?.user_id; // Get from authenticated user
 
     if (!listingId) {
       return { status: 400, body: { message: 'listingId is required' } };
     }
 
     try {
-      const result = await ListingModel.deleteListing(listingId);
-
-      if (result.ok) {
-        console.log('[CONTROLLER/LISTING] deleteListing successful:', listingId);
-        return { status: 200, body: { message: 'Listing deleted successfully' } };
+      // If user is authenticated, verify ownership
+      if (landlordId) {
+        const result = await ListingModel.deleteListingByLandlord(listingId, landlordId);
+        
+        if (result.ok) {
+          console.log('[CONTROLLER/LISTING] deleteListing successful:', listingId);
+          return { status: 200, body: { message: 'Listing deleted successfully' } };
+        }
+        
+        if (result.error === 'Listing not found or not owned by landlord') {
+          return { status: 403, body: { message: 'You can only delete your own listings' } };
+        }
+        
+        console.error('[CONTROLLER/LISTING] deleteListing failed:', result.error);
+        return { status: 500, body: { message: 'Failed to delete listing', error: result.error } };
+      } else {
+        // Fallback to admin delete (no ownership check)
+        const result = await ListingModel.deleteListing(listingId);
+        
+        if (result.ok) {
+          console.log('[CONTROLLER/LISTING] deleteListing successful:', listingId);
+          return { status: 200, body: { message: 'Listing deleted successfully' } };
+        }
+        
+        if (result.error === 'Listing not found') {
+          return { status: 404, body: { message: 'Listing not found' } };
+        }
+        
+        console.error('[CONTROLLER/LISTING] deleteListing failed:', result.error);
+        return { status: 500, body: { message: 'Failed to delete listing', error: result.error } };
       }
-
-      if (result.error === 'Listing not found') {
-        return { status: 404, body: { message: 'Listing not found' } };
-      }
-
-      console.error('[CONTROLLER/LISTING] deleteListing failed:', result.error);
-      return { status: 500, body: { message: 'Failed to delete listing', error: result.error } };
     } catch (err) {
       console.error('[CONTROLLER/LISTING] deleteListing error:', err);
       return { status: 500, body: { message: 'Internal server error' } };
