@@ -23,9 +23,9 @@ app.use('/api/govlisting', require('./routes/govListing'));
 app.use('/api/search', require('./routes/search'));
 app.use('/api/enquiry', require('./routes/enquiry'));
 app.use('/api/profile', require('./routes/profile'));
-app.use('/api/adminlisting', require('./routes/adminListing'));
-app.use('/api/adminreview', require('./routes/adminListingReview'));
+app.use('/api/listingmanagement', require('./routes/listingManagement'));
 app.use('/api/apimanagement', require('./routes/apiManagement'));
+app.use('/api/systemmanagement', require('./routes/systemManagement'));
 app.use('/api/usermanagement', require('./routes/userManagement'));
 app.use('/api/map', require('./routes/map'));
 app.use('/api/upload', require('./routes/upload'));
@@ -44,12 +44,11 @@ const port = PORT || 3000;
 // Server start
 app.listen(port, async () => {
   console.log(`[APP] Server listening on port ${port}`);
-  console.log("testing reload from webhook");
   try {
-    // Temporarily disabled for testing
-    // const res = await runStartupSync();
-    // console.log(`[APP] Startup sync completed: ${res.inserted} records processed.`);
-    console.log(`[APP] Startup sync disabled for testing`);
+    // Comment these out after first startup
+    const res = await runStartupSync();
+    console.log(`[APP] Startup sync completed: ${res.inserted} records processed.`);
+    // console.log(`[APP] Startup sync disabled for testing`);
   } catch (err) {
     console.error('[APP] Startup sync failed:', err);
   }

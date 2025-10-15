@@ -381,6 +381,45 @@ module.exports = {
   },
 
   /**
+   * Get review statistics (overall and recent activity)
+   */
+  getReviewStatistics: async function () {
+    try {
+      // Overall statistics
+      const [overallStats] = await pool.execute(`
+        SELECT
+          COUNT(*) as total_listings,
+          SUM(CASE WHEN review_status = 'pending' THEN 1 ELSE 0 END) as pending_reviews,
+          SUM(CASE WHEN review_status = 'approved' THEN 1 ELSE 0 END) as approved_listings,
+          SUM(CASE WHEN review_status = 'rejected' THEN 1 ELSE 0 END) as rejected_listings,
+          SUM(CASE WHEN review_status = 'needs_info' THEN 1 ELSE 0 END) as needs_info_listings
+        FROM listings
+      `);
+
+      // Recent activity (last 7 days)
+      const [recentActivity] = await pool.execute(`
+        SELECT
+          DATE(created_date) as date,
+          COUNT(*) as created_count,
+          SUM(CASE WHEN review_status = 'pending' THEN 1 ELSE 0 END) as pending_count
+        FROM listings
+        WHERE created_date >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)
+        GROUP BY DATE(created_date)
+        ORDER BY date DESC
+      `);
+
+      return {
+        ok: true,
+        overall: overallStats[0] || {},
+        recentActivity: recentActivity || []
+      };
+    } catch (err) {
+      console.error('[DB] getReviewStatistics error:', err);
+      return { ok: false, error: err };
+    }
+  },
+
+  /**
    * Update listing review status (admin only)
    */
   updateListingReview: async function (listingId, reviewData) {

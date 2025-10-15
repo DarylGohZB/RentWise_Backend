@@ -93,4 +93,74 @@ module.exports = {
       return [];
     }
   }
+,
+
+  /**
+   * Get a single enquiry with property and landlord details
+   */
+  getEnquiryById: async function (enquiryId) {
+    try {
+      const [rows] = await pool.execute(`
+        SELECT 
+          e.enquiry_id,
+          e.property_id,
+          e.landlord_email,
+          e.property_postal_code,
+          e.enquirer_name,
+          e.enquirer_email,
+          e.enquiry_message,
+          e.timestamp,
+          e.status,
+          l.title as listing_title,
+          l.address as listing_address,
+          l.price as monthly_rent,
+          l.property_type,
+          l.rooms,
+          l.images,
+          u.displayName as landlord_name
+        FROM enquiries e
+        LEFT JOIN listings l ON e.property_id = l.listing_id
+        LEFT JOIN users u ON l.landlord_id = u.user_id
+        WHERE e.enquiry_id = ?
+      `, [enquiryId]);
+
+      return rows.length ? rows[0] : null;
+    } catch (err) {
+      console.error('[DB] getEnquiryById error:', err);
+      return null;
+    }
+  }
+
+  ,
+
+  /**
+   * Get property details used in enquiry property-details endpoint
+   */
+  getPropertyDetailsById: async function (propertyId) {
+    try {
+      const [rows] = await pool.execute(`
+        SELECT 
+          l.listing_id as property_id,
+          l.title,
+          l.description,
+          l.address,
+          l.postal_code,
+          l.price as monthly_rent,
+          l.property_type,
+          l.rooms,
+          l.images,
+          l.availability_date,
+          u.email as landlord_email,
+          u.displayName as landlord_name
+        FROM listings l
+        LEFT JOIN users u ON l.landlord_id = u.user_id
+        WHERE l.listing_id = ? AND l.status = 'active'
+      `, [propertyId]);
+
+      return rows.length ? rows[0] : null;
+    } catch (err) {
+      console.error('[DB] getPropertyDetailsById error:', err);
+      return null;
+    }
+  }
 };
