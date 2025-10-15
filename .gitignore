@@ -17,6 +17,9 @@ pnpm-debug.log*
 
 *.log
 
+# Upload folders nodejs
+uploads/
+
 # Environment files obviously
 .env
 .env.local
@@ -29,4 +32,3 @@ dist/
 build/
 tmp/
 temp/
-
