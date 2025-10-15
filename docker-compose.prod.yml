@@ -29,7 +29,7 @@ services:
     env_file:
       - ./stack.env
     ports:
-      - "${NODEJS_PORT}:${PORT}"
+      - "${NODEJS_PORT}:3000"
     depends_on:
       rentwiseDB:
         condition: service_healthy
