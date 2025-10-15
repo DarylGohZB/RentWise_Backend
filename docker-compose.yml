@@ -65,6 +65,7 @@ services:
     volumes:
       - ./nodejs:/usr/src/app
       - /usr/src/app/node_modules
+      - uploads_data:/usr/src/app/uploads
 
   redis:
     image: redis:7.0-alpine
@@ -77,4 +78,6 @@ services:
 
 volumes:
   redis_data:
+    driver: local
+  uploads_data:
     driver: local
