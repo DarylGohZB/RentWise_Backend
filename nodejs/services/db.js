@@ -2,9 +2,18 @@ const mysql = require('mysql2/promise');
 
 console.log('[SERVICES/DB] Initializing MySQL connection pool...');
 
+const host = process.env.DB_HOST || 'localhost';
+const portRaw = process.env.DB_PORT || 3306;
+let port = Number(portRaw);
+if (host === 'rentwiseDB') {
+  port = 3306; // always use container port when talking to Docker MySQL service
+}
+
+console.log(`[DB] Connecting host=${host} port=${port} user=${process.env.DB_USER || 'root'} db=${process.env.DB_NAME || 'rentwiseDB'}`);
+
 const pool = mysql.createPool({
-  host: process.env.DB_HOST || 'localhost',
-  port: Number(process.env.DB_PORT || 3306),
+  host,
+  port,
   user: process.env.DB_USER || 'root',
   password: process.env.DB_PASSWORD || '',
   database: process.env.DB_NAME || 'rentwiseDB',
