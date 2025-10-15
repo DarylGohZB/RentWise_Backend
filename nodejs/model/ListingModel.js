@@ -112,18 +112,43 @@ module.exports = {
   },
 
   /**
-   * Get listings by landlord
+   * Get all active listings
    */
-  getListingsByLandlord: async function (landlordId, status = 'active', limit = 50, offset = 0) {
+  getAllListings: async function (limit = 50, offset = 0) {
     try {
       const [rows] = await pool.execute(
-        `SELECT * FROM listings 
-         WHERE landlord_id = ? AND status = ?
-         ORDER BY created_date DESC
+        `SELECT l.*, u.displayName as landlord_name
+         FROM listings l
+         LEFT JOIN users u ON l.landlord_id = u.user_id
+         WHERE l.status = 'active'
+         ORDER BY l.created_date DESC
          LIMIT ? OFFSET ?`,
-        [landlordId, status, limit, offset]
+        [limit, offset]
       );
+      return rows;
+    } catch (err) {
+      console.error('[DB] getAllListings error:', err);
+      return [];
+    }
+  },
 
+  /**
+   * Get listings by landlord
+   */
+  getListingsByLandlord: async function (landlordId, status = null, limit = 50, offset = 0) {
+    try {
+      let query = `SELECT * FROM listings WHERE landlord_id = ?`;
+      let params = [landlordId];
+      
+      if (status) {
+        query += ` AND status = ?`;
+        params.push(status);
+      }
+      
+      query += ` ORDER BY created_date DESC LIMIT ? OFFSET ?`;
+      params.push(limit, offset);
+      
+      const [rows] = await pool.execute(query, params);
       return rows;
     } catch (err) {
       console.error('[DB] getListingsByLandlord error:', err);

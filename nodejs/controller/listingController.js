@@ -75,11 +75,28 @@ module.exports = {
   },
 
   /**
+   * Get all active listings
+   */
+  getAllListings: async function (req) {
+    const { limit = 50, offset = 0 } = req.query;
+    try {
+      const listings = await ListingModel.getAllListings(
+        parseInt(limit),
+        parseInt(offset)
+      );
+      return { status: 200, body: listings };
+    } catch (err) {
+      console.error('[CONTROLLER/LISTING] getAllListings error:', err);
+      return { status: 500, body: { message: 'Internal server error' } };
+    }
+  },
+
+  /**
    * Get listings by landlord
    */
   getLandlordListings: async function (req) {
     const { landlordId } = req.params;
-    const { status = 'active', limit = 50, offset = 0 } = req.query;
+    const { status, limit = 50, offset = 0 } = req.query;
 
     if (!landlordId) {
       return { status: 400, body: { message: 'landlordId is required' } };

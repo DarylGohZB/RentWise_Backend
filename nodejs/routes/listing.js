@@ -34,6 +34,19 @@ router.post('/', AuthMiddleware.verifyTokenMiddleware, uploadMultiple, handleUpl
   }
 });
 
+// Get all active listings (for public viewing) - MUST be before /:listingId
+router.get('/', async (req, res) => {
+  console.log('[ROUTES/LISTING] GET / called');
+  try {
+    const { limit = 50, offset = 0 } = req.query;
+    const result = await listingController.getAllListings(req);
+    res.status(result.status).json(result.body);
+  } catch (err) {
+    console.error('[ROUTES/LISTING] GET / error:', err);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+});
+
 // Get listing by ID
 router.get('/:listingId', async (req, res) => {
   console.log('[ROUTES/LISTING] GET /:listingId called');
