@@ -1,0 +1,50 @@
+version: '3.8'
+
+services:
+  rentwiseDB:
+    image: mysql:8.0
+    container_name: rentwise-mysql
+    restart: unless-stopped
+    env_file:
+      - ./stack.env
+    command: --port=3306
+    ports:
+      - "${DB_PORT}:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./mysql/schema:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  nodejs:
+    build:
+      context: ./nodejs
+      dockerfile: Dockerfile
+    image: rentwise-node:latest
+    container_name: rentwisesg-nodejs
+    restart: unless-stopped
+    env_file:
+      - ./stack.env
+    ports:
+      - "${NODEJS_PORT}:${PORT}"
+    depends_on:
+      rentwiseDB:
+        condition: service_healthy
+
+  redis:
+    image: redis:7.0-alpine
+    container_name: rentwise-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+
+volumes:
+  mysql_data:
+    driver: local
+  redis_data:
+    driver: local

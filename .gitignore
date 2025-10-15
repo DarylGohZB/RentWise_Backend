@@ -15,10 +15,6 @@ yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 
-# Docker stuff
-docker-compose.override.yml
-**/docker-compose.override.yml
-**/docker-compose.*.yml
 *.log
 
 # Environment files obviously
