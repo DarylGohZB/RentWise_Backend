@@ -44,6 +44,7 @@ const port = PORT || 3000;
 // Server start
 app.listen(port, async () => {
   console.log(`[APP] Server listening on port ${port}`);
+  console.log("testing reload from webhook");
   try {
     const res = await runStartupSync();
     console.log(`[APP] Startup sync completed: ${res.inserted} records processed.`);
