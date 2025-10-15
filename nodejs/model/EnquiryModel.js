@@ -9,12 +9,15 @@ module.exports = {
     await p.execute(`
       CREATE TABLE IF NOT EXISTS enquiries (
         enquiry_id INT AUTO_INCREMENT PRIMARY KEY,
-        listing_id INT NOT NULL,
-        tenant_name VARCHAR(100) NOT NULL,
-        tenant_email VARCHAR(255) NOT NULL,
-        message TEXT NOT NULL,
-        enquiry_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        FOREIGN KEY (listing_id) REFERENCES listings(listing_id) ON DELETE CASCADE
+        property_id INT NOT NULL,
+        landlord_email VARCHAR(255) NOT NULL,
+        property_postal_code VARCHAR(10),
+        enquirer_name VARCHAR(255) NOT NULL,
+        enquirer_email VARCHAR(255) NOT NULL,
+        enquiry_message TEXT NOT NULL,
+        timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+        status ENUM('new', 'read', 'replied') DEFAULT 'new',
+        FOREIGN KEY (property_id) REFERENCES listings(listing_id) ON DELETE CASCADE
       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
     `);
     
@@ -25,17 +28,20 @@ module.exports = {
    */
   createEnquiry: async function (enquiryData) {
     const {
-      listing_id,
-      tenant_name,
-      tenant_email,
-      message
+      property_id,
+      landlord_email,
+      property_postal_code,
+      enquirer_name,
+      enquirer_email,
+      enquiry_message,
+      timestamp
     } = enquiryData;
 
     try {
       const [result] = await pool.execute(
-        `INSERT INTO enquiries (listing_id, tenant_name, tenant_email, message) 
-         VALUES (?, ?, ?, ?)`,
-        [listing_id, tenant_name, tenant_email, message]
+        `INSERT INTO enquiries (property_id, landlord_email, property_postal_code, enquirer_name, enquirer_email, enquiry_message, timestamp) 
+         VALUES (?, ?, ?, ?, ?, ?, ?)`,
+        [property_id, landlord_email, property_postal_code, enquirer_name, enquirer_email, enquiry_message, timestamp || new Date()]
       );
 
       return { ok: true, enquiryId: result.insertId };
@@ -48,16 +54,16 @@ module.exports = {
   /**
    * Get enquiries for a specific listing
    */
-  getEnquiriesByListing: async function (listingId) {
+  getEnquiriesByListing: async function (propertyId) {
     try {
       const [rows] = await pool.execute(
         `SELECT e.*, l.title as listing_title, u.displayName as landlord_name, u.email as landlord_email
          FROM enquiries e
-         LEFT JOIN listings l ON e.listing_id = l.listing_id
+         LEFT JOIN listings l ON e.property_id = l.listing_id
          LEFT JOIN users u ON l.landlord_id = u.user_id
-         WHERE e.listing_id = ?
-         ORDER BY e.enquiry_date DESC`,
-        [listingId]
+         WHERE e.property_id = ?
+         ORDER BY e.timestamp DESC`,
+        [propertyId]
       );
 
       return rows;
@@ -75,9 +81,9 @@ module.exports = {
       const [rows] = await pool.execute(
         `SELECT e.*, l.title as listing_title, l.address as listing_address
          FROM enquiries e
-         LEFT JOIN listings l ON e.listing_id = l.listing_id
+         LEFT JOIN listings l ON e.property_id = l.listing_id
          WHERE l.landlord_id = ?
-         ORDER BY e.enquiry_date DESC`,
+         ORDER BY e.timestamp DESC`,
         [landlordId]
       );
 

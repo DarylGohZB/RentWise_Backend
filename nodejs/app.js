@@ -46,8 +46,10 @@ app.listen(port, async () => {
   console.log(`[APP] Server listening on port ${port}`);
   console.log("testing reload from webhook");
   try {
-    const res = await runStartupSync();
-    console.log(`[APP] Startup sync completed: ${res.inserted} records processed.`);
+    // Temporarily disabled for testing
+    // const res = await runStartupSync();
+    // console.log(`[APP] Startup sync completed: ${res.inserted} records processed.`);
+    console.log(`[APP] Startup sync disabled for testing`);
   } catch (err) {
     console.error('[APP] Startup sync failed:', err);
   }

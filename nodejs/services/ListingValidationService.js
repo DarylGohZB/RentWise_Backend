@@ -72,7 +72,7 @@ class ListingValidationService {
     
     // Check maximum 5 images
     if (imageArray.length > 5) {
-      return { isValid: false, error: 'Maximum 5 images allowed per listing' };
+      return { isValid: false, error: 'Failed to update listing. You cannot have more than 5 images.' };
     }
     
     // Validate each image URL
@@ -93,7 +93,12 @@ class ListingValidationService {
   static isValidImageUrl(url) {
     if (!url || typeof url !== 'string') return false;
     
-    // Basic URL validation
+    // Allow relative paths starting with /uploads/
+    if (url.startsWith('/uploads/')) {
+      return true;
+    }
+    
+    // Basic URL validation for full URLs
     try {
       new URL(url);
     } catch {
@@ -156,7 +161,7 @@ class ListingValidationService {
   }
 
   /**
-   * Validate complete listing data
+   * Validate complete listing data (for creation)
    * @param {object} listingData - Complete listing data
    * @returns {object} - Validation result
    */
@@ -165,7 +170,7 @@ class ListingValidationService {
     const validatedData = {};
 
     // Validate required fields
-    const requiredFields = ['landlord_id', 'title', 'address', 'postal_code', 'price', 'property_type'];
+    const requiredFields = ['title', 'address', 'postal_code', 'price', 'property_type'];
     for (const field of requiredFields) {
       if (!listingData[field]) {
         errors.push(`${field} is required`);
@@ -213,6 +218,78 @@ class ListingValidationService {
       validatedData.review_status = reviewStatus.reviewStatus;
       validatedData.review_message = reviewStatus.message;
     }
+
+    return {
+      isValid: errors.length === 0,
+      errors,
+      validatedData
+    };
+  }
+
+  /**
+   * Validate listing data for updates (only validate provided fields)
+   * @param {object} updateData - Partial listing data for update
+   * @returns {object} - Validation result
+   */
+  static validateListingUpdate(updateData) {
+    const errors = [];
+    const validatedData = {};
+
+    console.log('[VALIDATION] validateListingUpdate called with:', updateData);
+
+    // Validate email if provided
+    if (updateData.email) {
+      const emailValidation = this.validateEmail(updateData.email);
+      if (!emailValidation.isValid) {
+        errors.push(emailValidation.error);
+      } else {
+        validatedData.email = updateData.email;
+      }
+    }
+
+    // Validate price if provided
+    if (updateData.price !== undefined) {
+      const priceValidation = this.validatePrice(updateData.price);
+      if (!priceValidation.isValid) {
+        errors.push(priceValidation.error);
+      } else {
+        validatedData.price = priceValidation.validatedPrice;
+      }
+    }
+
+    // Validate images if provided
+    if (updateData.images !== undefined) {
+      const imagesValidation = this.validateImages(updateData.images);
+      if (!imagesValidation.isValid) {
+        errors.push(imagesValidation.error);
+      } else {
+        validatedData.images = imagesValidation.images;
+      }
+    }
+
+    // Validate postal code if provided
+    if (updateData.postal_code) {
+      const postalValidation = this.validatePostalCode(updateData.postal_code);
+      if (!postalValidation.isValid) {
+        errors.push(postalValidation.error);
+      } else {
+        validatedData.postal_code = updateData.postal_code;
+      }
+    }
+
+    // Add other fields that don't need special validation
+    const simpleFields = ['title', 'description', 'address', 'property_type', 'rooms', 'availability_date', 'status', 'review_status'];
+    for (const field of simpleFields) {
+      if (updateData[field] !== undefined) {
+        validatedData[field] = updateData[field];
+      }
+    }
+
+    console.log('[VALIDATION] validateListingUpdate result:', {
+      isValid: errors.length === 0,
+      errors,
+      validatedData
+    });
 
     return {
       isValid: errors.length === 0,

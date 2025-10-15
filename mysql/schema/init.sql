@@ -50,12 +50,15 @@ CREATE TABLE IF NOT EXISTS listings (
 # Enquiries table for property enquiries
 CREATE TABLE IF NOT EXISTS enquiries (
   enquiry_id INT AUTO_INCREMENT PRIMARY KEY,
-  listing_id INT NOT NULL,
-  tenant_name VARCHAR(100) NOT NULL,
-  tenant_email VARCHAR(255) NOT NULL,
-  message TEXT NOT NULL,
-  enquiry_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (listing_id) REFERENCES listings(listing_id) ON DELETE CASCADE
+  property_id INT NOT NULL,
+  landlord_email VARCHAR(255) NOT NULL,
+  property_postal_code VARCHAR(10),
+  enquirer_name VARCHAR(255) NOT NULL,
+  enquirer_email VARCHAR(255) NOT NULL,
+  enquiry_message TEXT NOT NULL,
+  timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+  status ENUM('new', 'read', 'replied') DEFAULT 'new',
+  FOREIGN KEY (property_id) REFERENCES listings(listing_id) ON DELETE CASCADE
 );
 
 # Checking

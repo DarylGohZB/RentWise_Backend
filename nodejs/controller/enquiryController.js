@@ -13,41 +13,47 @@ module.exports = {
    */
   createEnquiry: async function (req) {
     const {
-      listing_id,
-      tenant_name,
-      tenant_email,
-      message
+      property_id,
+      landlord_email,
+      property_postal_code,
+      enquirer_name,
+      enquirer_email,
+      enquiry_message,
+      timestamp
     } = req.body || {};
 
-    console.log('[CONTROLLER/ENQUIRY] createEnquiry attempt for listing:', listing_id);
+    console.log('[CONTROLLER/ENQUIRY] createEnquiry attempt for property:', property_id);
 
     // Validation
-    if (!listing_id || !tenant_name || !tenant_email || !message) {
+    if (!property_id || !landlord_email || !enquirer_name || !enquirer_email || !enquiry_message) {
       console.warn('[CONTROLLER/ENQUIRY] createEnquiry failed: missing required fields');
-      return { status: 400, body: { message: 'listing_id, tenant_name, tenant_email, and message are required' } };
+      return { status: 400, body: { message: 'property_id, landlord_email, enquirer_name, enquirer_email, and enquiry_message are required' } };
     }
 
     // Email validation
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(tenant_email)) {
+    if (!emailRegex.test(enquirer_email) || !emailRegex.test(landlord_email)) {
       console.warn('[CONTROLLER/ENQUIRY] createEnquiry failed: invalid email format');
       return { status: 400, body: { message: 'Invalid email format' } };
     }
 
     try {
-      // Get listing details to find landlord
-      const listing = await ListingModel.getListingById(listing_id);
+      // Get listing details to verify property exists
+      const listing = await ListingModel.getListingById(property_id);
       if (!listing) {
-        console.warn('[CONTROLLER/ENQUIRY] createEnquiry failed: listing not found');
-        return { status: 404, body: { message: 'Listing not found' } };
+        console.warn('[CONTROLLER/ENQUIRY] createEnquiry failed: property not found');
+        return { status: 404, body: { message: 'Property not found' } };
       }
 
       // Create enquiry
       const enquiryData = {
-        listing_id,
-        tenant_name,
-        tenant_email,
-        message
+        property_id,
+        landlord_email,
+        property_postal_code,
+        enquirer_name,
+        enquirer_email,
+        enquiry_message,
+        timestamp: timestamp || new Date()
       };
 
       const result = await EnquiryModel.createEnquiry(enquiryData);
@@ -58,12 +64,14 @@ module.exports = {
         // Send notification email to landlord
         try {
           await MailService.sendEnquiryNotification({
-            landlordEmail: listing.landlord_email,
-            landlordName: listing.landlord_name,
-            tenantName: tenant_name,
-            tenantEmail: tenant_email,
+            landlordEmail: landlord_email,
+            landlordName: listing.landlord_name || 'Landlord',
+            enquirerName: enquirer_name,
+            enquirerEmail: enquirer_email,
             propertyTitle: listing.title,
-            message: message,
+            propertyAddress: listing.address,
+            propertyPostalCode: property_postal_code,
+            enquiryMessage: enquiry_message,
             enquiryId: result.enquiryId
           });
         } catch (emailErr) {
@@ -74,14 +82,14 @@ module.exports = {
         return {
           status: 201,
           body: {
-            message: 'Enquiry submitted successfully',
+            message: 'Enquiry sent successfully',
             enquiryId: result.enquiryId
           }
         };
       }
 
       console.error('[CONTROLLER/ENQUIRY] createEnquiry failed:', result.error);
-      return { status: 500, body: { message: 'Failed to create enquiry', error: result.error } };
+      return { status: 500, body: { message: 'Failed to send enquiry', error: result.error } };
     } catch (err) {
       console.error('[CONTROLLER/ENQUIRY] createEnquiry error:', err);
       return { status: 500, body: { message: 'Internal server error' } };

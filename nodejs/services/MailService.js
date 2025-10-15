@@ -37,10 +37,12 @@ module.exports = {
     const {
       landlordEmail,
       landlordName,
-      tenantName,
-      tenantEmail,
+      enquirerName,
+      enquirerEmail,
       propertyTitle,
-      message,
+      propertyAddress,
+      propertyPostalCode,
+      enquiryMessage,
       enquiryId
     } = data;
 
@@ -55,18 +57,20 @@ module.exports = {
           <div style="background-color: #f5f5f5; padding: 20px; border-radius: 8px; margin: 20px 0;">
             <h3 style="margin-top: 0; color: #555;">Property Details</h3>
             <p><strong>Property:</strong> ${propertyTitle}</p>
+            <p><strong>Address:</strong> ${propertyAddress}</p>
+            ${propertyPostalCode ? `<p><strong>Postal Code:</strong> ${propertyPostalCode}</p>` : ''}
             <p><strong>Enquiry ID:</strong> #${enquiryId}</p>
           </div>
 
           <div style="background-color: #e8f4fd; padding: 20px; border-radius: 8px; margin: 20px 0;">
-            <h3 style="margin-top: 0; color: #555;">Tenant Information</h3>
-            <p><strong>Name:</strong> ${tenantName}</p>
-            <p><strong>Email:</strong> ${tenantEmail}</p>
+            <h3 style="margin-top: 0; color: #555;">Enquirer Information</h3>
+            <p><strong>Name:</strong> ${enquirerName}</p>
+            <p><strong>Email:</strong> ${enquirerEmail}</p>
           </div>
 
           <div style="background-color: #fff3cd; padding: 20px; border-radius: 8px; margin: 20px 0;">
             <h3 style="margin-top: 0; color: #555;">Message</h3>
-            <p style="white-space: pre-wrap;">${message}</p>
+            <p style="white-space: pre-wrap;">${enquiryMessage}</p>
           </div>
 
           <div style="text-align: center; margin: 30px 0;">

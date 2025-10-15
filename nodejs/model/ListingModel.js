@@ -116,14 +116,17 @@ module.exports = {
    */
   getAllListings: async function (limit = 50, offset = 0) {
     try {
+      // Ensure limit and offset are numbers
+      const numLimit = parseInt(limit) || 50;
+      const numOffset = parseInt(offset) || 0;
+      
       const [rows] = await pool.execute(
         `SELECT l.*, u.displayName as landlord_name
          FROM listings l
          LEFT JOIN users u ON l.landlord_id = u.user_id
-         WHERE l.status = 'active'
+         WHERE l.status = 'active' AND l.review_status = 'approved'
          ORDER BY l.created_date DESC
-         LIMIT ? OFFSET ?`,
-        [limit, offset]
+         LIMIT ${numLimit} OFFSET ${numOffset}`
       );
       return rows;
     } catch (err) {
@@ -137,6 +140,12 @@ module.exports = {
    */
   getListingsByLandlord: async function (landlordId, status = null, limit = 50, offset = 0) {
     try {
+      console.log('[DB] getListingsByLandlord called with:', { landlordId, status, limit, offset });
+      
+      // Ensure limit and offset are numbers
+      const numLimit = parseInt(limit) || 50;
+      const numOffset = parseInt(offset) || 0;
+      
       let query = `SELECT * FROM listings WHERE landlord_id = ?`;
       let params = [landlordId];
       
@@ -145,10 +154,14 @@ module.exports = {
         params.push(status);
       }
       
-      query += ` ORDER BY created_date DESC LIMIT ? OFFSET ?`;
-      params.push(limit, offset);
+      // Use string interpolation for LIMIT and OFFSET to avoid MySQL prepared statement issues
+      query += ` ORDER BY created_date DESC LIMIT ${numLimit} OFFSET ${numOffset}`;
+      
+      console.log('[DB] Executing query:', query);
+      console.log('[DB] With params:', params);
       
       const [rows] = await pool.execute(query, params);
+      console.log('[DB] Query returned', rows.length, 'rows:', rows);
       return rows;
     } catch (err) {
       console.error('[DB] getListingsByLandlord error:', err);
@@ -165,7 +178,7 @@ module.exports = {
         SELECT l.*, u.displayName as landlord_name
         FROM listings l
         LEFT JOIN users u ON l.landlord_id = u.user_id
-        WHERE l.status = 'active'
+        WHERE l.status = 'active' AND l.review_status = 'approved'
       `;
       const params = [];
 
@@ -205,8 +218,11 @@ module.exports = {
         params.push(filters.availability_date);
       }
 
-      query += ' ORDER BY l.created_date DESC LIMIT ? OFFSET ?';
-      params.push(limit, offset);
+      // Ensure limit and offset are numbers
+      const numLimit = parseInt(limit) || 50;
+      const numOffset = parseInt(offset) || 0;
+      
+      query += ` ORDER BY l.created_date DESC LIMIT ${numLimit} OFFSET ${numOffset}`;
 
       const [rows] = await pool.execute(query, params);
       return rows;
@@ -221,8 +237,8 @@ module.exports = {
    */
   updateListing: async function (listingId, updateData) {
     try {
-      // Validate the update data
-      const validation = ListingValidationService.validateListingData(updateData);
+      // Validate the update data (only validate provided fields)
+      const validation = ListingValidationService.validateListingUpdate(updateData);
       if (!validation.isValid) {
         return { 
           ok: false, 

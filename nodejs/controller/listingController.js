@@ -95,20 +95,26 @@ module.exports = {
    * Get listings by landlord
    */
   getLandlordListings: async function (req) {
+    console.log('[CONTROLLER/LISTING] getLandlordListings called');
     const { landlordId } = req.params;
     const { status, limit = 50, offset = 0 } = req.query;
+    
+    console.log('[CONTROLLER/LISTING] getLandlordListings params:', { landlordId, status, limit, offset });
 
     if (!landlordId) {
       return { status: 400, body: { message: 'landlordId is required' } };
     }
 
     try {
+      console.log('[CONTROLLER/LISTING] Calling ListingModel.getListingsByLandlord...');
       const listings = await ListingModel.getListingsByLandlord(
         landlordId, 
         status, 
         parseInt(limit), 
         parseInt(offset)
       );
+      
+      console.log('[CONTROLLER/LISTING] getListingsByLandlord returned:', listings.length, 'listings');
 
       return { status: 200, body: listings };
     } catch (err) {
