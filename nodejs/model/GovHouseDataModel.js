@@ -1,53 +1,9 @@
-const mysql = require('mysql2/promise');
-
-let pool;
-function getPool() {
-  if (!pool) {
-    const resolveTemplate = (val) => {
-      if (typeof val !== 'string') return val;
-      const m = val.match(/^\$\{([^}]+)\}$/);
-      if (m && m[1]) {
-        return process.env[m[1]] || val;
-      }
-      return val;
-    };
-
-    let host = resolveTemplate(process.env.DB_HOST) || process.env.MYSQL_HOST || 'localhost';
-    let portRaw = resolveTemplate(process.env.DB_PORT) || process.env.MYSQL_PORT || '3306';
-    let user = resolveTemplate(process.env.DB_USER) || process.env.MYSQL_USER || 'root';
-    let password = resolveTemplate(process.env.DB_PASSWORD) || process.env.MYSQL_PASSWORD || '';
-    // If using root implicitly, prefer MYSQL_ROOT_PASSWORD when present
-    if (user === 'root' && process.env.MYSQL_ROOT_PASSWORD) {
-      password = process.env.MYSQL_ROOT_PASSWORD;
-    }
-    let database = resolveTemplate(process.env.DB_NAME) || process.env.MYSQL_DATABASE || 'rentwiseDB';
-
-    let port = Number.parseInt(portRaw, 10) || 3306;
-    if (host === 'rentwiseDB') {
-      port = 3306; // always use container port when talking to Docker MySQL service
-    }
-
-    // Minimal one-time log to aid setup; no secrets printed
-    console.log(`[DB] Connecting host=${host} port=${port} user=${user} db=${database}`);
-
-    pool = mysql.createPool({
-      host,
-      port,
-      user,
-      password,
-      database,
-      waitForConnections: true,
-      connectionLimit: 5,
-      queueLimit: 0,
-    });
-  }
-  return pool;
-}
+const pool = require('../db/config');
 
 const TABLE = 'gov_house_transactions';
 
 async function ensureTable() {
-  const p = getPool();
+  const p = pool;
   await p.execute(`
     CREATE TABLE IF NOT EXISTS ${TABLE} (
       id VARCHAR(64) PRIMARY KEY,
@@ -97,7 +53,7 @@ function mapRecordToRow(r) {
 
 async function upsertRecords(records, sourceLabel = 'datastore') {
   if (!records || !records.length) return { inserted: 0, updated: 0 };
-  const p = getPool();
+  const p = pool;
   await ensureTable();
 
   // Always use per-row UPSERT to avoid packet/placeholder limits entirely
@@ -131,19 +87,19 @@ module.exports = {
   ensureTable,
   upsertRecords,
   getCount: async function () {
-    const p = getPool();
+    const p = pool;
     await ensureTable();
     const [rows] = await p.execute(`SELECT COUNT(*) AS c FROM ${TABLE}`);
     return rows && rows[0] ? Number(rows[0].c) : 0;
   },
   getSample: async function (limit = 5) {
-    const p = getPool();
+    const p = pool;
     await ensureTable();
     const [rows] = await p.execute(`SELECT * FROM ${TABLE} ORDER BY updatedAt DESC LIMIT ?`, [Math.max(1, Math.min(100, Number(limit) || 5))]);
     return rows || [];
   },
   searchByTown: async function (filters = {}) {
-    const p = getPool();
+    const p = pool;
     await ensureTable();
     const where = [];
     const params = [];
@@ -159,7 +115,7 @@ module.exports = {
     return rows || [];
   },
   searchByFilter: async function (filters = {}) {
-    const p = getPool();
+    const p = pool;
     await ensureTable();
     
     // Build WHERE clause conditions
@@ -219,7 +175,7 @@ module.exports = {
     return rows || [];
   },
   getTownStats: async function (townName) {
-    const p = getPool();
+    const p = pool;
     await ensureTable();
     const [rows] = await p.execute(
       `SELECT COUNT(*) AS listings, ROUND(AVG(monthlyRent)) AS avgMonthlyRent FROM ${TABLE} WHERE town = ?`,
@@ -229,7 +185,7 @@ module.exports = {
     return { listings: Number(r.listings) || 0, avgMonthlyRent: r.avgMonthlyRent != null ? Number(r.avgMonthlyRent) : null };
   },
   getAllTownStats: async function () {
-    const p = getPool();
+    const p = pool;
     await ensureTable();
     const [rows] = await p.execute(`
       SELECT town,
@@ -249,7 +205,7 @@ module.exports = {
     return map;
   },
   getAllTownStatsByFlatType: async function () {
-    const p = getPool();
+    const p = pool;
     await ensureTable();
     const [rows] = await p.execute(`
       SELECT 

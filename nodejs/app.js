@@ -1,6 +1,6 @@
 const express = require('express');
 const cors = require('cors');
-const { PORT } = require('./config');
+const { PORT } = require('./config/config');
 const { runStartupSync } = require('./controller/startupController');
 
 const app = express();

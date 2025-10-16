@@ -1,4 +1,4 @@
-const pool = require('../services/db');
+const pool = require('../db/config');
 const ListingValidationService = require('../services/ListingValidationService');
 
 module.exports = {

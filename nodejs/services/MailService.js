@@ -1,5 +1,5 @@
 const nodemailer = require('nodemailer');
-const { GMAIL_USER, GMAIL_PASS } = require('../config');
+const { GMAIL_USER, GMAIL_PASS } = require('../config/config');
 
 if (!GMAIL_USER || !GMAIL_PASS) {
   throw new Error('[SERVICES/MAILSERVICE] GMAIL_USER and GMAIL_PASS must be set in environment variables.');
