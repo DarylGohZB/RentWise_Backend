@@ -21,14 +21,38 @@ function generateRandomColor() {
  * @returns {string[]} Array of unique hex colors
  */
 function generateUniqueColors(count) {
-  const colors = new Set();
-  
-  // Generate colors until we have enough unique ones
-  while (colors.size < count) {
-    colors.add(generateRandomColor());
+  // Generate visually distinct, map-friendly colors using HSL
+  // We use golden-angle spacing on hue to maximize perceptual difference.
+  // Keep saturation and lightness in moderate ranges so colors show well on map tiles.
+  function hslToHex(h, s, l) {
+    // h: 0-360, s,l: 0-100
+    s /= 100;
+    l /= 100;
+    const k = n => (n + h / 30) % 12;
+    const a = s * Math.min(l, 1 - l);
+    const f = n => {
+      const val = l - a * Math.max(-1, Math.min(k(n) - 3, Math.min(9 - k(n), 1)));
+      return Math.round(255 * val).toString(16).padStart(2, '0');
+    };
+    return `#${f(0)}${f(8)}${f(4)}`.toUpperCase();
   }
-  
-  return Array.from(colors);
+
+  const GOLDEN_ANGLE = 137.50776405003785; // degrees
+  const colors = [];
+
+  // Choose base saturation/lightness values good for maps.
+  // Slightly lower saturation and mid lightness to avoid neon or washed-out colors.
+  const baseS = 62; // percent
+  const baseL = 52; // percent
+
+  for (let i = 0; i < count; i++) {
+    const hue = (i * GOLDEN_ANGLE) % 360;
+    // small jitter on lightness to avoid adjacent similar tones
+    const l = baseL + ( (i % 3) - 1 ) * 4; // -4,0,+4 cycle
+    colors.push(hslToHex(hue, baseS, l));
+  }
+
+  return colors;
 }
 
 /**
@@ -92,7 +116,8 @@ module.exports = {
           name: town.name,
           lat: town.lat,
           lng: town.lng,
-          avgPrice: avgPrice,
+          coords:town.coords,
+          avgPrice: avgPrice, // Calculated from backend, grouped by town and averaged
           color: uniqueColors[index],
         };
       });
