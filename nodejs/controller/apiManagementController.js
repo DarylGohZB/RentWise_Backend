@@ -7,7 +7,8 @@ const {
   ensureTable,
   upsertRecords,
 } = require('../model/GovHouseDataModel');
-const { fetchAll } = require('../services/govtApiService');
+const { fetchAll, getGovtApiStatusInfo, logGovtApiKeyUpdate, logGovtApiSync, } = require('../services/govtApiService');
+const axios = require('axios');
 
 const DATASET_ID = 'd_c9f57187485a850908655db0e8cfe651';
 
@@ -15,6 +16,40 @@ module.exports.handleTest = async function (req) {
   console.log('[CONTROLLER/API-MGMT] handleTest called');
   return true;
 };
+
+// GET status info
+module.exports.getGovtApiStatus = async function (req) {
+  try {
+    const data = await getGovtApiStatusInfo();
+    return { success: true, data };
+  } catch (err) {
+    console.error('[CONTROLLER/API-MGMT] getGovtApiStatusInfo failed:', err);
+    return { success: false, message: 'Server error' };
+  }
+};
+
+// Log API key update
+module.exports.logGovtApiKeyUpdate = async function (req, res) {
+  try {
+    await logGovtApiKeyUpdate();
+    return res.json({ success: true });
+  } catch (err) {
+    console.error('[CONTROLLER/API-MGMT] logGovtApiKeyUpdate failed:', err);
+    return res.status(500).json({ success: false, message: 'Server error' });
+  }
+}
+
+// Log sync
+module.exports.updateGovApiAudit = async function (req, res) {
+  try {
+    const { status } = req.body;
+    await logGovtApiSync(status || 'operational');
+    return res.json({ success: true });
+  } catch (err) {
+    console.error('[CONTROLLER/API-MGMT] logGovtApiSync failed:', err);
+    return res.status(500).json({ success: false, message: 'Server error' });
+  }
+}
 
 module.exports.getGovCount = async function (req) {
   console.log('[CONTROLLER/API-MGMT] getGovCount called');
@@ -88,5 +123,36 @@ module.exports.syncGovData = async function (req) {
   } catch (err) {
     console.error('[CONTROLLER/API-MGMT] syncGovData error:', err);
     throw err;
+  }
+};
+
+module.exports.testGovtApiKey = async function (req) {
+  console.log('[CONTROLLER/API-MGMT] testGovtApiKey called');
+
+  try {
+    const apiKey = process.env.DATA_GOV_SG_API_KEY;
+    if (!apiKey || !apiKey.length) {
+      return { ok: false, message: 'API key not configured in .env' };
+    }
+
+    // The API endpoint used (8f6bfe2e-3008-43fa-bac9-f7982a9c5c5a) is an actual HDB resale dataset from data.gov.sg
+    const testUrl = `https://data.gov.sg/api/action/datastore_search?resource_id=d_c9f57187485a850908655db0e8cfe651&offset=0&limit=1`;
+
+    const response = await axios.get(testUrl, {
+      headers: {
+        'api-key': apiKey
+      },
+      timeout: 5000
+    });
+
+    if (response.data && response.data.success) {
+      return { ok: true };
+    } else {
+      return { ok: false, message: 'API response unsuccessful' };
+    }
+
+  } catch (err) {
+    console.error('[CONTROLLER/API-MGMT] testGovtApiKey error:', err.message);
+    return { ok: false, message: err.message };
   }
 };

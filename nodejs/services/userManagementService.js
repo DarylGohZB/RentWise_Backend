@@ -70,4 +70,14 @@ module.exports = {
     }
     return result;
   },
+  getNewLandlordsThisWeek: async function () {
+    console.log('[SERVICE/USER_MANAGEMENT] Getting new landlords added this week');
+    const result = await UserModel.countLandlordsCreatedThisWeek();
+    if (result.ok) {
+      console.log('[SERVICE/USER_MANAGEMENT] Count successful:', result.count);
+    } else {
+      console.error('[SERVICE/USER_MANAGEMENT] Count failed:', result.error);
+    }
+    return result;
+  }
 };

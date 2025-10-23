@@ -18,13 +18,13 @@ module.exports = {
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
     `);
-    
+
     // Insert default admin user if not exists
     await p.execute(`
       INSERT IGNORE INTO users (displayName, email, passwordHash, userRole)
       VALUES ('admin', 'admin@admin.com', SHA2('password', 256), 'ADMIN');
     `);
-    
+
     console.log('[DB] Users table ensured');
   },
   getUser: async function (email, hash) {
@@ -81,7 +81,7 @@ module.exports = {
           'SELECT user_id FROM users WHERE email = ? AND user_id != ? LIMIT 1',
           [email, user_id]
         );
-        
+
         if (existingUser.length > 0) {
           console.warn('[DB] updateUserProfile failed: email already exists for another user');
           return { ok: false, error: { code: 'ER_DUP_ENTRY', message: 'Email already exists' } };
@@ -152,7 +152,7 @@ module.exports = {
           'SELECT user_id FROM users WHERE email = ? AND user_id != ? LIMIT 1',
           [updateData.email, user_id]
         );
-        
+
         if (existingUser.length > 0) {
           console.warn('[DB] updateUserByAdmin failed: email already exists for another user');
           return { ok: false, error: { code: 'EMAIL_EXISTS', message: 'Email already exists' } };
@@ -284,4 +284,18 @@ module.exports = {
       return { ok: false, error: err };
     }
   },
+  countLandlordsCreatedThisWeek: async function () {
+    try {
+      const [rows] = await pool.execute(`
+      SELECT COUNT(*) AS count
+      FROM users
+      WHERE userRole = 'LANDLORD'
+        AND YEARWEEK(CONVERT_TZ(registeredDateTime, '+00:00', '+08:00'), 1) = YEARWEEK(CONVERT_TZ(NOW(), '+00:00', '+08:00'), 1)
+    `);
+      return { ok: true, count: rows[0].count };
+    } catch (err) {
+      console.error('[DB] countLandlordsCreatedThisWeek error:', err);
+      return { ok: false, error: err };
+    }
+  }
 };

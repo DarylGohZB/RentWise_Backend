@@ -188,4 +188,17 @@ module.exports = {
       return { status: 500, body: { message: 'Internal server error' } };
     }
   },
+  getNewLandlordsThisWeek: async function (req, res) {
+    console.log('[CONTROLLER/USER_MANAGEMENT] Getting new landlords this week');
+    try {
+      const result = await userManagementService.getNewLandlordsThisWeek();
+      if (result.ok) {
+        return res.json({ success: true, count: result.count });
+      }
+      throw result.error;
+    } catch (error) {
+      console.error('[CONTROLLER/USER_MANAGEMENT] Error:', error);
+      return res.status(500).json({ success: false, error: error.message || 'Internal server error' });
+    }
+  }
 };

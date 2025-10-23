@@ -2,6 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const { PORT } = require('./config/config');
 const { runStartupSync } = require('./controller/startupController');
+const { scheduleDataSync } = require('./services/schedulerService');
 
 const app = express();
 // Additional Orgins allowed
@@ -16,6 +17,9 @@ app.use(cors({
 // Parse JSON request bodies
 app.use(express.json());
 
+// Optional but good for form POSTs
+app.use(express.urlencoded({ extended: true }));
+
 // Route mounting
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/listing', require('./routes/listing'));
@@ -25,7 +29,7 @@ app.use('/api/enquiry', require('./routes/enquiry'));
 app.use('/api/profile', require('./routes/profile'));
 app.use('/api/listingmanagement', require('./routes/listingManagement'));
 app.use('/api/apimanagement', require('./routes/apiManagement'));
-app.use('/api/systemmanagement', require('./routes/systemManagement'));
+app.use('/api/systemsettings', require('./routes/systemSettings'));
 app.use('/api/usermanagement', require('./routes/userManagement'));
 app.use('/api/map', require('./routes/map'));
 app.use('/api/upload', require('./routes/upload'));
@@ -46,9 +50,11 @@ app.listen(port, async () => {
   console.log(`[APP] Server listening on port ${port}`);
   try {
     // Comment these out after first startup
-    const res = await runStartupSync();
-    console.log(`[APP] Startup sync completed: ${res.inserted} records processed.`);
-    // console.log(`[APP] Startup sync disabled for testing`);
+    //const res = await runStartupSync();
+    //console.log(`[APP] Startup sync completed: ${res.inserted} records processed.`);
+     console.log(`[APP] Startup sync disabled for testing`);
+
+     scheduleDataSync();
   } catch (err) {
     console.error('[APP] Startup sync failed:', err);
   }

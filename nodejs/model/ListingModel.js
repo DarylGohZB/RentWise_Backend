@@ -28,7 +28,7 @@ module.exports = {
                 FOREIGN KEY (landlord_id) REFERENCES users(user_id) ON DELETE CASCADE
       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
     `);
-    
+
     console.log('[DB] Listings table ensured');
   },
   /**
@@ -39,10 +39,10 @@ module.exports = {
       // Validate the listing data
       const validation = ListingValidationService.validateListingData(listingData);
       if (!validation.isValid) {
-        return { 
-          ok: false, 
-          error: 'Validation failed', 
-          details: validation.errors 
+        return {
+          ok: false,
+          error: 'Validation failed',
+          details: validation.errors
         };
       }
 
@@ -73,13 +73,13 @@ module.exports = {
          property_type, rooms, images, availability_date, 
          status, review_status) 
          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-        [landlord_id, title, description, address, postal_code, price, property_type, 
-         rooms, imagesJson, availability_date, 
-         status, review_status]
+        [landlord_id, title, description, address, postal_code, price, property_type,
+          rooms, imagesJson, availability_date,
+          status, review_status]
       );
 
-      return { 
-        ok: true, 
+      return {
+        ok: true,
         listingId: result.insertId,
         status: status,
         reviewStatus: review_status,
@@ -119,7 +119,7 @@ module.exports = {
       // Ensure limit and offset are numbers
       const numLimit = parseInt(limit) || 50;
       const numOffset = parseInt(offset) || 0;
-      
+
       const [rows] = await pool.execute(
         `SELECT l.*, u.displayName as landlord_name
          FROM listings l
@@ -141,25 +141,25 @@ module.exports = {
   getListingsByLandlord: async function (landlordId, status = null, limit = 50, offset = 0) {
     try {
       console.log('[DB] getListingsByLandlord called with:', { landlordId, status, limit, offset });
-      
+
       // Ensure limit and offset are numbers
       const numLimit = parseInt(limit) || 50;
       const numOffset = parseInt(offset) || 0;
-      
+
       let query = `SELECT * FROM listings WHERE landlord_id = ?`;
       let params = [landlordId];
-      
+
       if (status) {
         query += ` AND status = ?`;
         params.push(status);
       }
-      
+
       // Use string interpolation for LIMIT and OFFSET to avoid MySQL prepared statement issues
       query += ` ORDER BY created_date DESC LIMIT ${numLimit} OFFSET ${numOffset}`;
-      
+
       console.log('[DB] Executing query:', query);
       console.log('[DB] With params:', params);
-      
+
       const [rows] = await pool.execute(query, params);
       console.log('[DB] Query returned', rows.length, 'rows:', rows);
       return rows;
@@ -221,7 +221,7 @@ module.exports = {
       // Ensure limit and offset are numbers
       const numLimit = parseInt(limit) || 50;
       const numOffset = parseInt(offset) || 0;
-      
+
       query += ` ORDER BY l.created_date DESC LIMIT ${numLimit} OFFSET ${numOffset}`;
 
       const [rows] = await pool.execute(query, params);
@@ -240,10 +240,10 @@ module.exports = {
       // Validate the update data (only validate provided fields)
       const validation = ListingValidationService.validateListingUpdate(updateData);
       if (!validation.isValid) {
-        return { 
-          ok: false, 
-          error: 'Validation failed', 
-          details: validation.errors 
+        return {
+          ok: false,
+          error: 'Validation failed',
+          details: validation.errors
         };
       }
 
@@ -285,8 +285,8 @@ module.exports = {
         return { ok: false, error: 'Listing not found' };
       }
 
-      return { 
-        ok: true, 
+      return {
+        ok: true,
         affectedRows: result.affectedRows,
         status: validatedData.status,
         reviewStatus: validatedData.review_status,
@@ -363,7 +363,7 @@ module.exports = {
       // Ensure parameters are proper integers
       const limitInt = parseInt(limit);
       const offsetInt = parseInt(offset);
-      
+
       // Use string interpolation for LIMIT and OFFSET to avoid prepared statement issues
       const query = `SELECT l.*, u.displayName as landlord_name, u.email as landlord_email
          FROM listings l
@@ -371,7 +371,7 @@ module.exports = {
          WHERE l.review_status = 'pending'
          ORDER BY l.created_date ASC
          LIMIT ${limitInt} OFFSET ${offsetInt}`;
-      
+
       const [rows] = await pool.execute(query);
       return rows;
     } catch (err) {
@@ -425,7 +425,7 @@ module.exports = {
   updateListingReview: async function (listingId, reviewData) {
     try {
       const { review_status, review_notes } = reviewData;
-      
+
       if (!['approved', 'rejected', 'needs_info'].includes(review_status)) {
         return { ok: false, error: 'Invalid review status' };
       }
@@ -498,5 +498,37 @@ module.exports = {
       console.error('[DB] deleteListingByLandlord error:', err);
       return { ok: false, error: err };
     }
-  }
+  },
+
+  /**
+   * Count listings created today (SGT)
+   */
+  countTodayListings: async function () {
+    try {
+      const [rows] = await pool.execute(`
+        SELECT COUNT(*) AS count
+        FROM listings
+        WHERE DATE(CONVERT_TZ(created_date, '+00:00', '+08:00')) = CURDATE()
+      `);
+      return rows.length ? rows[0].count : 0;
+    } catch (err) {
+      console.error('[DB] countTodayListings error:', err);
+      return 0;
+    }
+  },
+
+  /**
+ * Get total count of all listings
+ */
+  countAllListings: async function () {
+    try {
+      const [rows] = await pool.execute(`
+      SELECT COUNT(*) AS total FROM listings
+    `);
+      return rows[0]?.total || 0;
+    } catch (err) {
+      console.error('[DB] getAllListingsCount error:', err);
+      return 0;
+    }
+  },
 };

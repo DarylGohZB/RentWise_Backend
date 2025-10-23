@@ -25,4 +25,9 @@ router.post('/request-info/:listingId', AuthMiddleware.verifyTokenMiddleware, Au
 
 router.get('/stats', AuthMiddleware.verifyTokenMiddleware, AuthMiddleware.isAdmin, listingManagementController.getStatistics);
 
+// Get count of listings created today (Admin only)
+router.get('/today-count', AuthMiddleware.verifyTokenMiddleware, AuthMiddleware.isAdmin, listingManagementController.getTodayListings);
+
+router.get('/total-count', AuthMiddleware.verifyTokenMiddleware, AuthMiddleware.isAdmin, listingManagementController.getAllListingsCount);
+
 module.exports = router;

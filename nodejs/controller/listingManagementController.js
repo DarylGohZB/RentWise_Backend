@@ -50,7 +50,7 @@ class ListingManagementController {
       console.error('[CONTROLLER/LISTING-MANAGEMENT] Error getting listing for review:', error);
 
       const statusCode = error.message === 'Listing not found' ? 404 :
-                        error.message === 'Invalid listing ID' ? 400 : 500;
+        error.message === 'Invalid listing ID' ? 400 : 500;
 
       res.status(statusCode).json({
         success: false,
@@ -126,7 +126,7 @@ class ListingManagementController {
       console.error('[CONTROLLER/LISTING-MANAGEMENT] Error requesting more info:', error);
 
       const statusCode = error.message === 'Listing not found' ? 404 :
-                        error.message.includes('required') ? 400 : 500;
+        error.message.includes('required') ? 400 : 500;
 
       res.status(statusCode).json({
         success: false,
@@ -149,6 +149,40 @@ class ListingManagementController {
       res.status(500).json({
         success: false,
         error: error.message || 'Failed to fetch statistics'
+      });
+    }
+  }
+
+  /**
+ * Get count of listings created today (SGT)
+ */
+  async getTodayListings(req, res) {
+    console.log('[CONTROLLER/LISTING-MANAGEMENT] Getting today\'s listings count');
+    try {
+      const result = await listingManagementService.countListingsToday();
+      res.json(result);
+    } catch (error) {
+      console.error('[CONTROLLER/LISTING-MANAGEMENT] Error getting today listings count:', error);
+      res.status(500).json({
+        success: false,
+        error: error.message || 'Failed to fetch today\'s listing count'
+      });
+    }
+  }
+
+  /**
+ * Get total count of all listings
+ */
+  async getAllListingsCount(req, res) {
+    console.log('[CONTROLLER/LISTING-MANAGEMENT] Getting all listings count');
+    try {
+      const result = await listingManagementService.countAllListings();
+      res.json(result);
+    } catch (error) {
+      console.error('[CONTROLLER/LISTING-MANAGEMENT] Error getting all listings count:', error);
+      res.status(500).json({
+        success: false,
+        error: error.message || 'Failed to fetch all listings count'
       });
     }
   }

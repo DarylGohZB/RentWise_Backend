@@ -71,4 +71,7 @@ router.delete('/user/:userId', verifyTokenMiddleware, isAdmin, async (req, res) 
   }
 });
 
+// Get number of new landlords added this week (Admin only)
+router.get('/landlords/this-week', verifyTokenMiddleware, isAdmin, userManagementController.getNewLandlordsThisWeek);
+
 module.exports = router;

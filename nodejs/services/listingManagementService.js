@@ -153,7 +153,7 @@ class ListingManagementService {
           throw new Error('No landlord email available');
         }
 
-        
+
         const subject = `RentWise: Additional Information Required for Your Listing`;
         const message = `
 Dear Landlord,
@@ -216,6 +216,34 @@ RentWise Admin Team
     } catch (error) {
       console.error('[SERVICE/LISTING-MANAGEMENT] Error getting statistics:', error);
       throw new Error('Failed to fetch statistics');
+    }
+  }
+
+  /**
+   * Count listings added today (SGT)
+   */
+  async countListingsToday() {
+    console.log('[SERVICE/LISTING-MANAGEMENT] Counting listings created today');
+    try {
+      const count = await ListingModel.countTodayListings();
+      return { success: true, count };
+    } catch (error) {
+      console.error('[SERVICE/LISTING-MANAGEMENT] Error counting today\'s listings:', error);
+      throw new Error('Failed to count today\'s listings');
+    }
+  }
+
+  /**
+   * Count all listings
+   */
+  async countAllListings() {
+    console.log('[SERVICE/LISTING-MANAGEMENT] Counting all listings');
+    try {
+      const count = await ListingModel.countAllListings();
+      return { success: true, count };
+    } catch (error) {
+      console.error('[SERVICE/LISTING-MANAGEMENT] Error counting all listings:', error);
+      throw new Error('Failed to count all listings');
     }
   }
 }
