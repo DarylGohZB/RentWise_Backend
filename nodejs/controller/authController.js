@@ -1,6 +1,7 @@
 const authService = require('../services/authService');
 const crypto = require('crypto');
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const passwordRegex = /^(?=.*[a-zA-Z])(?=.*[0-9])[a-zA-Z0-9]{8,}$/;
 
 module.exports = {
   // Used for /test endpoint
@@ -21,6 +22,10 @@ module.exports = {
     if (!emailRegex.test(email)) {
       console.warn('[CONTROLLER/AUTHCONTROLLER] login failed: invalid email format');
       return { status: 400, body: { message: 'Invalid email format' } };
+    }
+    if (!passwordRegex.test(password)) {
+      console.warn('[CONTROLLER/AUTHCONTROLLER] login failed: invalid password format');
+      return { status: 400, body: { message: 'Invalid password format. Password must be at least 8 characters and contain only alphanumeric characters (letters a-z, A-Z, and numbers 0-9)' } };
     }
 
     const result = await authService.login({ email, password });
@@ -54,6 +59,10 @@ module.exports = {
     if (!emailRegex.test(email)) {
       console.warn('[CONTROLLER/AUTHCONTROLLER] register failed: invalid email format');
       return { status: 400, body: { message: 'Invalid email format' } };
+    }
+    if (!passwordRegex.test(password)) {
+      console.warn('[CONTROLLER/AUTHCONTROLLER] register failed: invalid password format');
+      return { status: 400, body: { message: 'Invalid password format. Password must be at least 8 characters and contain only alphanumeric characters (letters a-z, A-Z, and numbers 0-9)' } };
     }
 
     const displayName = email.split('@')[0];
