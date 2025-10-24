@@ -16,8 +16,14 @@ module.exports = {
      * Get current cron expression from DB
      */
     async getSyncSchedule() {
-        const [rows] = await pool.execute(`SELECT cron_expression FROM scheduled_operations LIMIT 1`);
-        return rows[0]?.cron_expression || '0 2 * * *'; // fallback to 2 AM
+        try {
+            const [rows] = await pool.execute(`SELECT cron_expression FROM scheduled_operations LIMIT 1`);
+            return rows[0]?.cron_expression || '0 2 * * *'; // fallback to 2 AM
+        } catch (error) {
+            console.error('[SCHEDULER-MODEL] Error getting sync schedule:', error.message);
+            console.log('[SCHEDULER-MODEL] Using default schedule: 0 2 * * * (Daily at 2:00 AM)');
+            return '0 2 * * *'; // fallback to 2 AM
+        }
     },
 
     /**

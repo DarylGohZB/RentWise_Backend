@@ -253,7 +253,13 @@ class ListingValidationService {
       if (!priceValidation.isValid) {
         errors.push(priceValidation.error);
       } else {
-        validatedData.price = priceValidation.validatedPrice;
+        validatedData.price = priceValidation.price;
+        
+        // Determine review status for price changes
+        const reviewStatus = this.determineReviewStatus(priceValidation.price);
+        validatedData.status = reviewStatus.status;
+        validatedData.review_status = reviewStatus.reviewStatus;
+        validatedData.review_message = reviewStatus.message;
       }
     }
 
