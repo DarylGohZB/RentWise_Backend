@@ -93,7 +93,7 @@ VALUES
 
 # Final update for admin login test
 UPDATE users
-SET passwordHash = LOWER(SHA2('SWEAdmin', 256))
+SET passwordHash = LOWER(SHA2('SWEAdmin1', 256))
 WHERE email = 'admin@gmail.com';
 
 CREATE TABLE IF NOT EXISTS govt_api_status (
