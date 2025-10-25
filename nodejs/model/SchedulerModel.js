@@ -1,6 +1,30 @@
 const pool = require('../db/config');
 
 module.exports = {
+    /**
+     * Ensure scheduled_operations table exists with proper schema
+     */
+    ensureTable: async function () {
+        const p = pool;
+        await p.execute(`
+            CREATE TABLE IF NOT EXISTS scheduled_operations (
+                id INT PRIMARY KEY AUTO_INCREMENT,
+                cron_expression VARCHAR(50) NOT NULL,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+        `);
+
+        // Insert default schedule if table is empty
+        const [rows] = await p.execute(`SELECT COUNT(*) as count FROM scheduled_operations`);
+        if (rows[0].count === 0) {
+            await p.execute(`
+                INSERT INTO scheduled_operations (cron_expression)
+                VALUES ('0 2 * * *')
+            `);
+        }
+
+        console.log('[DB] Scheduled operations table ensured');
+    },
     getScheduleMap() {
         const scheduleMap = {
             'Every 6 hours': '0 */6 * * *',

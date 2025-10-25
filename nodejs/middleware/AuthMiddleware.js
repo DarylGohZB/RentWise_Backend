@@ -39,8 +39,26 @@ function roleChecker(allowedRoles) {
   };
 }
 
+// Middleware for token verification that returns JSON response (for /verify endpoint)
+function verifyTokenResponseMiddleware(req, res, next) {
+  const authHeader = req.headers.authorization;
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return res.status(401).json({ valid: false, message: 'No token provided' });
+  }
+
+  const token = authHeader.split(' ')[1];
+  const verification = TokenService.verify(token);
+
+  if (!verification.ok) {
+    return res.status(401).json({ valid: false, message: 'Invalid or expired token' });
+  }
+
+  res.json({ valid: true, user: verification.payload });
+}
+
 module.exports = {
   verifyTokenMiddleware,
+  verifyTokenResponseMiddleware,
   // isRegistered: allow LANDLORD and ADMIN (MIGHT NOT NEED THIS)
   isRegistered: roleChecker(['LANDLORD', 'ADMIN']),
   // isAdmin: allow only ADMIN

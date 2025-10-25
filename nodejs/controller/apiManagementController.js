@@ -7,7 +7,7 @@ const {
   ensureTable,
   upsertRecords,
 } = require('../model/GovHouseDataModel');
-const { fetchAll, getGovtApiStatusInfo, logGovtApiKeyUpdate, logGovtApiSync, } = require('../services/govtApiService');
+const govtApiService = require('../services/govtApiService');
 const axios = require('axios');
 
 const DATASET_ID = 'd_c9f57187485a850908655db0e8cfe651';
@@ -20,7 +20,7 @@ module.exports.handleTest = async function (req) {
 // GET status info
 module.exports.getGovtApiStatus = async function (req) {
   try {
-    const data = await getGovtApiStatusInfo();
+    const data = await govtApiService.getGovtApiStatusInfo();
     return { success: true, data };
   } catch (err) {
     console.error('[CONTROLLER/API-MGMT] getGovtApiStatusInfo failed:', err);
@@ -31,7 +31,7 @@ module.exports.getGovtApiStatus = async function (req) {
 // Log API key update
 module.exports.logGovtApiKeyUpdate = async function (req, res) {
   try {
-    await logGovtApiKeyUpdate();
+    await govtApiService.logGovtApiKeyUpdate();
     return res.json({ success: true });
   } catch (err) {
     console.error('[CONTROLLER/API-MGMT] logGovtApiKeyUpdate failed:', err);
@@ -43,7 +43,7 @@ module.exports.logGovtApiKeyUpdate = async function (req, res) {
 module.exports.updateGovApiAudit = async function (req, res) {
   try {
     const { status } = req.body;
-    await logGovtApiSync(status || 'operational');
+    await govtApiService.logGovtApiSync(status || 'operational');
     return res.json({ success: true });
   } catch (err) {
     console.error('[CONTROLLER/API-MGMT] logGovtApiSync failed:', err);
@@ -109,7 +109,7 @@ module.exports.syncGovData = async function (req) {
     await ensureTable();
 
     console.log('[CONTROLLER/API-MGMT] Fetching records from data.gov.sg...');
-    const rows = await fetchAll(DATASET_ID, pageSize, max);
+    const rows = await govtApiService.fetchAll(DATASET_ID, pageSize, max);
     console.log(`[CONTROLLER/API-MGMT] Fetched ${rows.length} records.`);
 
     console.log('[CONTROLLER/API-MGMT] Upserting records into database...');
@@ -166,5 +166,63 @@ module.exports.testGovtApiKey = async function (req) {
   } catch (err) {
     console.error('[CONTROLLER/API-MGMT] testGovtApiKey error:', err.message);
     return { ok: false, message: err.message };
+  }
+};
+
+module.exports.updateApiKey = async function (req) {
+  console.log('[CONTROLLER/API-MGMT] updateApiKey called');
+  
+  try {
+    const { apiKey } = req.body || {};
+    if (!apiKey || typeof apiKey !== 'string' || apiKey.trim().length === 0) {
+      return { 
+        status: 400, 
+        body: { ok: false, message: 'Missing apiKey in request body' } 
+      };
+    }
+
+    const fs = require('fs');
+    const path = require('path');
+    const envPath = path.join(__dirname, '..', '..', '..', '.env');
+
+    let envContent = '';
+    try {
+      envContent = fs.readFileSync(envPath, 'utf8');
+    } catch {
+      console.warn('[CONTROLLER/API-MGMT] .env not found, will create a new one.');
+      envContent = '';
+    }
+
+    const keyName = 'DATA_GOV_SG_API_KEY';
+    const sanitizedValue = apiKey.replace(/\r?\n/g, '').trim();
+
+    const regexp = new RegExp(`^${keyName}=.*$`, 'm');
+    if (regexp.test(envContent)) {
+      envContent = envContent.replace(regexp, `${keyName}='${sanitizedValue}'`);
+    } else {
+      if (envContent.length && !envContent.endsWith('\n')) envContent += '\n';
+      envContent += `${keyName}='${sanitizedValue}'\n`;
+    }
+
+    fs.writeFileSync(envPath, envContent, { encoding: 'utf8' });
+    console.log('[CONTROLLER/API-MGMT] DATA_GOV_SG_API_KEY updated in .env');
+
+    // Log last key update time in DB using the service
+    const result = await govtApiService.logGovtApiKeyUpdate();
+    if (!result.success) {
+      throw new Error('Failed to log key update in DB');
+    }
+
+    return { 
+      status: 200, 
+      body: { ok: true, message: 'API key saved and last update time logged' } 
+    };
+
+  } catch (err) {
+    console.error('[CONTROLLER/API-MGMT] updateApiKey error:', err);
+    return { 
+      status: 500, 
+      body: { ok: false, message: 'Failed to update API key' } 
+    };
   }
 };

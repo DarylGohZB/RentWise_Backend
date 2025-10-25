@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const authController = require('../controller/authController');
-const TokenService = require('../services/TokenService');
+const { verifyTokenResponseMiddleware } = require('../middleware/AuthMiddleware');
 
 // Basic test endpoint
 router.all('/test', async (req, res) => {
@@ -55,21 +55,7 @@ router.post('/register/confirm', async (req, res) => {
 });
 
 // GET /verify (simple JWT validity check)
-router.get('/verify', async (req, res) => {
-  const authHeader = req.headers.authorization;
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return res.status(401).json({ valid: false, message: 'No token provided' });
-  }
-
-  const token = authHeader.split(' ')[1];
-  const verification = TokenService.verify(token);
-
-  if (!verification.ok) {
-    return res.status(401).json({ valid: false, message: 'Invalid or expired token' });
-  }
-
-  res.json({ valid: true, user: verification.payload });
-});
+router.get('/verify', verifyTokenResponseMiddleware);
 
 // POST /refresh - Refresh access token using refresh token
 router.post('/refresh', async (req, res) => {

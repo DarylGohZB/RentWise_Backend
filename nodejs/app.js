@@ -1,8 +1,8 @@
 const express = require('express');
 const cors = require('cors');
 const { PORT } = require('./config/config');
-const { runStartupSync } = require('./controller/startupController');
-const { scheduleDataSync } = require('./services/schedulerService');
+const { runStartupSync, ensureTables } = require('./controller/startupController');
+const schedulerController = require('./controller/schedulerController');
 const apiLogger = require('./middleware/ApiLoggerMiddleware');
 
 const app = express();
@@ -53,12 +53,22 @@ const port = PORT || 3000;
 app.listen(port, async () => {
   console.log(`[APP] Server listening on port ${port}`);
   try {
+    // Ensure all tables exist
+    await ensureTables();
+    console.log('[APP] Database tables ensured');
+
     // Comment these out after first startup
     //const res = await runStartupSync();
     //console.log(`[APP] Startup sync completed: ${res.inserted} records processed.`);
      console.log(`[APP] Startup sync disabled for testing`);
 
-     scheduleDataSync();
+     // Use schedulerController to schedule data sync
+     try {
+       await schedulerController.scheduleDataSync({});
+       console.log('[APP] Data synchronization scheduled successfully');
+     } catch (err) {
+       console.error('[APP] Failed to schedule data synchronization:', err);
+     }
   } catch (err) {
     console.error('[APP] Startup sync failed:', err);
   }

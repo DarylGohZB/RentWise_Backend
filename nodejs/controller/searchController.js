@@ -1,7 +1,7 @@
 // searchController.js
 const searchService = require('../services/searchService');
 const recommendationService = require('../services/recommendationService');
-const { isLatLngString, geocodeAddress, buildStaticMapUrl } = require('../services/geocodingService');
+const geocodingService = require('../services/geocodingService');
 const { getTownStats } = require('../model/GovHouseDataModel');
 
 module.exports.handleTest = async function (req) {
@@ -49,11 +49,11 @@ module.exports.recommendTown = async function (req) {
   // Accept either lat,lng or free-text (address/postal). Geocode if not lat,lng.
   async function toPoint(input) {
     if (!input) return null;
-    if (isLatLngString(input)) {
+    if (geocodingService.isLatLngString(input)) {
       const [lat, lng] = input.split(',').map(Number);
       return { lat, lng };
     }
-    const geo = await geocodeAddress(String(input));
+    const geo = await geocodingService.geocodeAddress(String(input));
     return geo.location;
   }
 
@@ -98,7 +98,7 @@ module.exports.recommendTown = async function (req) {
   } catch (_) {}
 
   // Let Static Maps auto-fit by omitting center/zoom (Google will compute viewport)
-  const staticMapUrl = buildStaticMapUrl({
+  const staticMapUrl = geocodingService.buildStaticMapUrl({
     points: [p1, p2, p3],
     center: null,
     zoom: null,

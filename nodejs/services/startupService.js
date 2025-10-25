@@ -3,7 +3,10 @@ const { fetchPage } = require('../services/govtApiService');
 const UserModel = require('../model/UserModel');
 const ListingModel = require('../model/ListingModel');
 const EnquiryModel = require('../model/EnquiryModel');
-const govtApiStatusModel = require('../model/govtApiStatusModel');
+const ApiLoggerModel = require('../model/ApiLoggerModel');
+const GovtApiStatusModel = require('../model/GovtApiStatusModel');
+const SchedulerModel = require('../model/SchedulerModel');
+const SystemSettingsModel = require('../model/SystemSettingsModel');
 
 const DATASET_ID = 'd_c9f57187485a850908655db0e8cfe651';
 
@@ -14,6 +17,10 @@ module.exports = {
     await UserModel.ensureTable();
     await ListingModel.ensureTable();
     await EnquiryModel.ensureTable();
+    await ApiLoggerModel.ensureTable();
+    await GovtApiStatusModel.ensureTable();
+    await SchedulerModel.ensureTable();
+    await SystemSettingsModel.ensureTable();
     await ensureTable(); // gov table
     console.log('[SERVICE/STARTUP] DB tables ensured');
     return { ok: true };
@@ -40,7 +47,7 @@ module.exports = {
     }
 
     // Update the last sync time here...
-    await govtApiStatusModel.setLastSyncNow('operational');
+    await GovtApiStatusModel.setLastSyncNow('operational');
 
     return { ok: true, inserted };
   }

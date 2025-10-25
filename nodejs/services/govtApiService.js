@@ -1,6 +1,6 @@
 // Minimal service to fetch paginated records from data.gov.sg Datastore API
 // Uses global fetch available in Node 18+.
-const govtApiStatusModel = require('../model/govtApiStatusModel');
+const GovtApiStatusModel = require('../model/GovtApiStatusModel');
 const DEFAULT_PAGE_SIZE = 50; // smaller page size to reduce rate limiting
 
 function sleep(ms) {
@@ -77,7 +77,7 @@ async function fetchAll(resourceId, pageSize = DEFAULT_PAGE_SIZE, maxRecords) {
 }
 
 async function getGovtApiStatusInfo() {
-  const row = await govtApiStatusModel.getStatusRow();
+  const row = await GovtApiStatusModel.getStatusRow();
   if (!row) throw new Error('Status row missing');
   return {
     apiStatus: row.current_status,
@@ -88,7 +88,7 @@ async function getGovtApiStatusInfo() {
 
 async function logGovtApiKeyUpdate() {
   try {
-    await govtApiStatusModel.setLastKeyUpdateNow();
+    await GovtApiStatusModel.setLastKeyUpdateNow();
     return { success: true };
   } catch (err) {
     console.error('[Service] logGovtApiKeyUpdate error:', err);
@@ -97,7 +97,7 @@ async function logGovtApiKeyUpdate() {
 }
 
 async function logGovtApiSync(status) {
-  await govtApiStatusModel.setLastSyncNow(status);
+  await GovtApiStatusModel.setLastSyncNow(status);
 }
 
 module.exports = {

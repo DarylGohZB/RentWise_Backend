@@ -1,4 +1,5 @@
 const govListingService = require('../services/govListingService');
+const schedulerService = require('../services/schedulerService');
 
 module.exports = {
   // Used for /test endpoint
@@ -75,5 +76,28 @@ module.exports = {
         error: result.error?.message || 'Unknown error',
       },
     };
+  },
+
+  // Schedule data synchronization
+  scheduleDataSync: async function (req) {
+    console.log('[CONTROLLER/GOVLISTINGCONTROLLER] scheduleDataSync called');
+    try {
+      await schedulerService.scheduleDataSync();
+      return {
+        status: 200,
+        body: {
+          message: 'Data synchronization scheduled successfully',
+        },
+      };
+    } catch (err) {
+      console.error('[CONTROLLER/GOVLISTINGCONTROLLER] scheduleDataSync error:', err);
+      return {
+        status: 500,
+        body: {
+          message: 'Failed to schedule data synchronization',
+          error: err.message || 'Unknown error',
+        },
+      };
+    }
   },
 };
