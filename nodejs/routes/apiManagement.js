@@ -5,6 +5,7 @@ const path = require('path');
 const apiManagementController = require('../controller/apiManagementController');
 const { logGovtApiKeyUpdate } = require('../services/govtApiService');
 const AuthMiddleware = require('../middleware/AuthMiddleware');
+const ApiLoggerModel = require('../model/ApiLoggerModel');
 
 const { saveSyncSchedule, getScheduleMap, getSyncSchedule } = require('../model/SchedulerModel');
 const { scheduleDataSync } = require('../services/schedulerService');
@@ -219,4 +220,9 @@ router.post('/updateSyncSchedule', async (req, res) => {
   await scheduleDataSync(); // Reschedule with new timing
 
   res.json({ success: true, message: 'Sync schedule updated!' });
+});
+
+router.get('/getApiLogs', AuthMiddleware.verifyTokenMiddleware, AuthMiddleware.isAdmin, async (req, res) => {
+  const logs = await ApiLoggerModel.getRecentLogs(20);
+  res.json({ success: true, logs });
 });

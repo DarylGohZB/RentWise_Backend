@@ -3,6 +3,7 @@ const cors = require('cors');
 const { PORT } = require('./config/config');
 const { runStartupSync } = require('./controller/startupController');
 const { scheduleDataSync } = require('./services/schedulerService');
+const apiLogger = require('./middleware/ApiLoggerMiddleware');
 
 const app = express();
 // Additional Orgins allowed
@@ -19,6 +20,9 @@ app.use(express.json());
 
 // Optional but good for form POSTs
 app.use(express.urlencoded({ extended: true }));
+
+// Log ALL /api/* routes using middleware
+app.use('/api', apiLogger);
 
 // Route mounting
 app.use('/api/auth', require('./routes/auth'));
