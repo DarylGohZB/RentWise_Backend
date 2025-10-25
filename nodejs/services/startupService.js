@@ -3,6 +3,7 @@ const { fetchPage } = require('../services/govtApiService');
 const UserModel = require('../model/UserModel');
 const ListingModel = require('../model/ListingModel');
 const EnquiryModel = require('../model/EnquiryModel');
+const govtApiStatusModel = require('../model/govtApiStatusModel');
 
 const DATASET_ID = 'd_c9f57187485a850908655db0e8cfe651';
 
@@ -37,6 +38,9 @@ module.exports = {
       offset += records.length;
       console.log(`[startupSync] upserted ${inserted} so far (offset=${offset}/${total})`);
     }
+
+    // Update the last sync time here...
+    await govtApiStatusModel.setLastSyncNow('operational');
 
     return { ok: true, inserted };
   }

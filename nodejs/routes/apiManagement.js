@@ -6,7 +6,7 @@ const apiManagementController = require('../controller/apiManagementController')
 const { logGovtApiKeyUpdate } = require('../services/govtApiService');
 const AuthMiddleware = require('../middleware/AuthMiddleware');
 
-const { saveSyncSchedule, getScheduleMap } = require('../model/SchedulerModel');
+const { saveSyncSchedule, getScheduleMap, getSyncSchedule } = require('../model/SchedulerModel');
 const { scheduleDataSync } = require('../services/schedulerService');
 
 // Basic test endpoint
@@ -109,16 +109,6 @@ router.get('/gov/search', async (req, res) => {
   }
 });
 
-
-router.post('/gov/sync', async (req, res) => {
-  try {
-    const data = await apiManagementController.syncGovData(req);
-    return res.json(data);
-  } catch (err) {
-    return res.status(500).json({ error: 'Failed to sync gov data' });
-  }
-});
-
 router.post('/updateApiKey', async (req, res) => {
   console.log('[ROUTES/API-MGMT] /updateApiKey called');
   try {
@@ -151,7 +141,7 @@ router.post('/updateApiKey', async (req, res) => {
     fs.writeFileSync(envPath, envContent, { encoding: 'utf8' });
     console.log('[ROUTES/API-MGMT] DATA_GOV_SG_API_KEY updated in .env');
 
-    // ✅ Log last key update time in DB using the service
+    // Log last key update time in DB using the service
     const result = await logGovtApiKeyUpdate();
     if (!result.success) {
       throw new Error('Failed to log key update in DB');
@@ -210,6 +200,12 @@ router.get('/getApiKey', AuthMiddleware.verifyTokenMiddleware, AuthMiddleware.is
   }
 
   return res.json({ success: true, apiKey });
+});
+
+router.get('/getSyncSchedule', async (req, res) => {
+  const scheduleMap = getScheduleMap();
+  const result = await getSyncSchedule();
+  return res.json({ success: true, result, scheduleMap });
 });
 
 router.post('/updateSyncSchedule', async (req, res) => {
