@@ -43,6 +43,7 @@ CREATE TABLE IF NOT EXISTS listings (
   description TEXT,
   address TEXT NOT NULL,
   postal_code VARCHAR(10),
+  town VARCHAR(100),
   price DECIMAL(10,2) NOT NULL,
   property_type ENUM('HDB') NOT NULL,
   rooms INT,
@@ -57,16 +58,16 @@ CREATE TABLE IF NOT EXISTS listings (
 );
 
 # Sample listings
-INSERT INTO listings (landlord_id, title, description, address, postal_code, price, property_type, rooms, images, availability_date, status, review_status)
+INSERT INTO listings (landlord_id, title, description, address, postal_code, town, price, property_type, rooms, images, availability_date, status, review_status)
 VALUES
-(2, 'Spacious 3-Room Flat in Tampines', 'Nice view near MRT', 'Blk 123 Tampines St 11', '520123', 2400.00, 'HDB', 3, JSON_ARRAY('img1.jpg', 'img2.jpg'), '2025-11-01', 'active', 'approved'),
-(2, 'Cosy 2-Room in Bedok', 'Perfect for couples', 'Blk 22 Bedok North Ave 3', '460022', 1800.00, 'HDB', 2, JSON_ARRAY('img3.jpg'), '2025-10-25', 'active', 'approved'),
-(3, 'Modern 4-Room Jurong', 'Spacious and bright', 'Blk 88 Jurong West St 91', '640088', 2800.00, 'HDB', 4, JSON_ARRAY('img4.jpg', 'img5.jpg'), '2025-11-15', 'pending_review', 'pending'),
-(4, 'Bukit Batok 3-Room', 'Fully furnished, near MRT', 'Blk 45 Bukit Batok East', '659045', 2200.00, 'HDB', 3, JSON_ARRAY('img6.jpg'), '2025-11-10', 'rented', 'approved'),
-(5, 'Woodlands Budget Unit', '1-Room HDB for short stays', 'Blk 10 Woodlands Ave 9', '738010', 1200.00, 'HDB', 1, JSON_ARRAY('img7.jpg'), '2025-10-20', 'inactive', 'rejected'),
-(2, 'New Tampines 5-Room', 'Great for families', 'Blk 678 Tampines Ave 5', '520678', 3000.00, 'HDB', 5, JSON_ARRAY('img8.jpg'), '2025-12-01', 'pending_review', 'needs_info'),
-(3, 'Clementi 2-Room', 'Convenient and quiet', 'Blk 234 Clementi Ave 3', '120234', 1900.00, 'HDB', 2, JSON_ARRAY('img9.jpg'), '2025-11-05', 'active', 'approved'),
-(6, 'Yishun 4-Room', 'Nice view of the park', 'Blk 456 Yishun Ring Road', '760456', 2600.00, 'HDB', 4, JSON_ARRAY('img10.jpg'), '2025-11-12', 'active', 'approved');
+(2, 'Spacious 3-Room Flat in Tampines', 'Nice view near MRT', 'Blk 123 Tampines St 11', '520123', 'TAMPINES', 2400.00, 'HDB', 3, JSON_ARRAY('img1.jpg', 'img2.jpg'), '2025-11-01', 'active', 'approved'),
+(2, 'Cosy 2-Room in Bedok', 'Perfect for couples', 'Blk 22 Bedok North Ave 3', '460022', 'BEDOK', 1800.00, 'HDB', 2, JSON_ARRAY('img3.jpg'), '2025-10-25', 'active', 'approved'),
+(3, 'Modern 4-Room Jurong', 'Spacious and bright', 'Blk 88 Jurong West St 91', '640088', 'JURONG WEST', 2800.00, 'HDB', 4, JSON_ARRAY('img4.jpg', 'img5.jpg'), '2025-11-15', 'pending_review', 'pending'),
+(4, 'Bukit Batok 3-Room', 'Fully furnished, near MRT', 'Blk 45 Bukit Batok East', '659045', 'BUKIT BATOK', 2200.00, 'HDB', 3, JSON_ARRAY('img6.jpg'), '2025-11-10', 'rented', 'approved'),
+(5, 'Woodlands Budget Unit', '1-Room HDB for short stays', 'Blk 10 Woodlands Ave 9', '738010', 'WOODLANDS', 1200.00, 'HDB', 1, JSON_ARRAY('img7.jpg'), '2025-10-20', 'inactive', 'rejected'),
+(2, 'New Tampines 5-Room', 'Great for families', 'Blk 678 Tampines Ave 5', '520678', 'TAMPINES', 3000.00, 'HDB', 5, JSON_ARRAY('img8.jpg'), '2025-12-01', 'pending_review', 'needs_info'),
+(3, 'Clementi 2-Room', 'Convenient and quiet', 'Blk 234 Clementi Ave 3', '120234', 'CLEMENTI', 1900.00, 'HDB', 2, JSON_ARRAY('img9.jpg'), '2025-11-05', 'active', 'approved'),
+(6, 'Yishun 4-Room', 'Nice view of the park', 'Blk 456 Yishun Ring Road', '760456', 'YISHUN', 2600.00, 'HDB', 4, JSON_ARRAY('img10.jpg'), '2025-11-12', 'active', 'approved');
 
 # Enquiries Table
 CREATE TABLE IF NOT EXISTS enquiries (
@@ -130,4 +131,17 @@ CREATE TABLE api_logs (
     record_summary VARCHAR(255),
     duration FLOAT,
     error_message TEXT
+);
+
+CREATE TABLE IF NOT EXISTS gov_house_transactions (
+    id VARCHAR(64) PRIMARY KEY,
+    rentApprovalDate VARCHAR(16),
+    town VARCHAR(64),
+    block VARCHAR(32),
+    streetName VARCHAR(128),
+    flatType VARCHAR(32),
+    monthlyRent INT,
+    source VARCHAR(64),
+    createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );

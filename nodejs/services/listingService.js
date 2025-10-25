@@ -200,6 +200,21 @@ class ListingService {
       throw error;
     }
   }
+
+  /**
+   * Filter listings based on room type, town, min/max price
+   */
+  async filterListings(filters) {
+    console.log('[SERVICE/LISTING] filterListings called with filters:', filters);
+    
+    try {
+      const listings = await ListingModel.filterListings(filters);
+      return listings;
+    } catch (error) {
+      console.error('[SERVICE/LISTING] filterListings error:', error);
+      throw error;
+    }
+  }
 }
 
 module.exports = new ListingService();

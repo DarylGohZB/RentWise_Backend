@@ -47,6 +47,18 @@ router.get('/', async (req, res) => {
   }
 });
 
+// Filter listings by room type, town, min/max price (public endpoint) - MUST be before /:listingId
+router.get('/filter', async (req, res) => {
+  console.log('[ROUTES/LISTING] GET /filter called');
+  try {
+    const result = await listingController.filterListings(req);
+    res.status(result.status).json(result.body);
+  } catch (err) {
+    console.error('[ROUTES/LISTING] GET /filter error:', err);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+});
+
 // Get listing by ID
 router.get('/:listingId', async (req, res) => {
   console.log('[ROUTES/LISTING] GET /:listingId called');
@@ -71,7 +83,7 @@ router.get('/landlord/:landlordId', async (req, res) => {
   }
 });
 
-// Search listings with filters
+// Search listings with filters (IS THIS BEING USED?)
 router.post('/search', async (req, res) => {
   console.log('[ROUTES/LISTING] POST /search called');
   try {

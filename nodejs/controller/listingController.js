@@ -1,5 +1,6 @@
 const listingService = require('../services/listingService');
 const ListingValidationService = require('../services/ListingValidationService');
+const mapService = require('../services/mapService');
 
 module.exports = {
   // Test endpoint
@@ -20,6 +21,26 @@ module.exports = {
     console.log('[CONTROLLER/LISTING] createListing attempt by authenticated user:', landlordId);
 
     try {
+      // Check town from postal code if postal_code is provided
+      if (listingData.postal_code) {
+        console.log('[CONTROLLER/LISTING] Looking up town for postal code:', listingData.postal_code);
+        const town = await mapService.checkTownByPostalCode(listingData.postal_code);
+        
+        if (!town) {
+          console.warn('[CONTROLLER/LISTING] Invalid postal code:', listingData.postal_code);
+          return {
+            status: 400,
+            body: {
+              message: 'Invalid postal code. Please provide a valid Singapore postal code.',
+              field: 'postal_code'
+            }
+          };
+        }
+        
+        listingData.town = town;
+        console.log('[CONTROLLER/LISTING] Found town:', town, 'for postal code:', listingData.postal_code);
+      }
+
       const result = await listingService.createListing(listingData);
       
       if (!result.ok) {
@@ -275,6 +296,26 @@ module.exports = {
         }
       }
 
+      // Check town from postal code if postal_code is being updated
+      if (updateData.postal_code) {
+        console.log('[CONTROLLER/LISTING] Looking up town for updated postal code:', updateData.postal_code);
+        const town = await mapService.checkTownByPostalCode(updateData.postal_code);
+        
+        if (!town) {
+          console.warn('[CONTROLLER/LISTING] Invalid postal code:', updateData.postal_code);
+          return {
+            status: 400,
+            body: {
+              message: 'Invalid postal code. Please provide a valid Singapore postal code.',
+              field: 'postal_code'
+            }
+          };
+        }
+        
+        updateData.town = town;
+        console.log('[CONTROLLER/LISTING] Found town:', town, 'for postal code:', updateData.postal_code);
+      }
+
       const result = await listingService.updateListing(listingId, updateData);
 
       if (!result.ok) {
@@ -405,6 +446,69 @@ module.exports = {
       }
     } catch (err) {
       console.error('[CONTROLLER/LISTING] deleteListingImage error:', err);
+      return { status: 500, body: { message: 'Internal server error' } };
+    }
+  },
+
+  /**
+   * Filter listings based on room type, town, min/max price
+   */
+  filterListings: async function (req) {
+    const { roomType, town, minPrice, maxPrice } = req.query;
+
+    console.log('[CONTROLLER/LISTING] filterListings called with params:', { roomType, town, minPrice, maxPrice });
+
+    try {
+      // Validate roomType if provided
+      if (roomType && (isNaN(roomType) || roomType < 1 || roomType > 6)) {
+        return {
+          status: 400,
+          body: {
+            message: 'roomType must be a number between 1 and 6'
+          }
+        };
+      }
+
+      // Validate price range if provided
+      if (minPrice && (isNaN(minPrice) || minPrice < 0)) {
+        return {
+          status: 400,
+          body: {
+            message: 'minPrice must be a positive number'
+          }
+        };
+      }
+
+      if (maxPrice && (isNaN(maxPrice) || maxPrice < 0)) {
+        return {
+          status: 400,
+          body: {
+            message: 'maxPrice must be a positive number'
+          }
+        };
+      }
+
+      if (minPrice && maxPrice && parseFloat(minPrice) > parseFloat(maxPrice)) {
+        return {
+          status: 400,
+          body: {
+            message: 'minPrice cannot be greater than maxPrice'
+          }
+        };
+      }
+
+      const filters = {
+        roomType: roomType && !isNaN(roomType) && roomType >= 1 && roomType <= 6 ? parseInt(roomType) : null,
+        town: town || null,
+        minPrice: minPrice ? parseFloat(minPrice) : null,
+        maxPrice: maxPrice ? parseFloat(maxPrice) : null
+      };
+
+      const listings = await listingService.filterListings(filters);
+      return { status: 200, body: listings };
+
+    } catch (err) {
+      console.error('[CONTROLLER/LISTING] filterListings error:', err);
       return { status: 500, body: { message: 'Internal server error' } };
     }
   }

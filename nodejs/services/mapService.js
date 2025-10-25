@@ -1,6 +1,7 @@
 const towns = require('../dataset/towns.json');
 const flatTypesData = require('../dataset/flatTypes.json');
 const { getAllTownStatsByFlatType } = require('../model/GovHouseDataModel');
+const geocodingService = require('./geocodingService');
 
 /**
  * Generate a random color in hex format
@@ -69,7 +70,97 @@ function formatPrice(price) {
   return `$${price.toLocaleString('en-US')}`;
 }
 
+/**
+ * Calculate distance between two points using Haversine formula
+ * @param {number} lat1 - Latitude of first point
+ * @param {number} lng1 - Longitude of first point
+ * @param {number} lat2 - Latitude of second point
+ * @param {number} lng2 - Longitude of second point
+ * @returns {number} Distance in kilometers
+ */
+function calculateDistance(lat1, lng1, lat2, lng2) {
+  const R = 6371; // Earth's radius in kilometers
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLng = (lng2 - lng1) * Math.PI / 180;
+  const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+    Math.sin(dLng/2) * Math.sin(dLng/2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+  return R * c;
+}
+
+/**
+ * Check which town a postal code belongs to by finding the closest town
+ * @param {string} postalCode - 6-digit Singapore postal code
+ * @returns {Promise<string|null>} Town name or null if not found
+ */
+async function checkTownByPostalCode(postalCode) {
+  console.log('[SERVICES/MAPSERVICE] checkTownByPostalCode called for postal code:', postalCode);
+  
+  try {
+    // Validate postal code format
+    if (!postalCode || typeof postalCode !== 'string' || !/^\d{6}$/.test(postalCode)) {
+      console.warn('[SERVICES/MAPSERVICE] Invalid postal code format:', postalCode);
+      return null;
+    }
+
+    // Geocode the postal code to get lat/lng
+    const geocodeResult = await geocodingService.geocodeAddress(postalCode);
+    if (!geocodeResult || !geocodeResult.location) {
+      console.warn('[SERVICES/MAPSERVICE] Failed to geocode postal code:', postalCode);
+      return null;
+    }
+
+    const { lat: postalLat, lng: postalLng } = geocodeResult.location;
+    console.log('[SERVICES/MAPSERVICE] Postal code coordinates:', postalLat, postalLng);
+
+    // Find the closest town using spatial indexing approach
+    let closestTown = null;
+    let minDistance = Infinity;
+
+    // Use spatial indexing: first check towns within a reasonable bounding box
+    // Singapore is roughly bounded by lat: 1.2-1.5, lng: 103.6-104.0
+    const BOUNDING_BOX_MARGIN = 0.1; // ~11km margin
+    const relevantTowns = towns.filter(town => 
+      town.lat >= postalLat - BOUNDING_BOX_MARGIN &&
+      town.lat <= postalLat + BOUNDING_BOX_MARGIN &&
+      town.lng >= postalLng - BOUNDING_BOX_MARGIN &&
+      town.lng <= postalLng + BOUNDING_BOX_MARGIN
+    );
+
+    console.log('[SERVICES/MAPSERVICE] Found', relevantTowns.length, 'towns in bounding box');
+
+    // If no towns in bounding box, check all towns (fallback)
+    const townsToCheck = relevantTowns.length > 0 ? relevantTowns : towns;
+
+    // Calculate distances to find closest town
+    for (const town of townsToCheck) {
+      const distance = calculateDistance(postalLat, postalLng, town.lat, town.lng);
+      
+      if (distance < minDistance) {
+        minDistance = distance;
+        closestTown = town.name;
+      }
+    }
+
+    // Set a reasonable threshold - if closest town is > 20km away, consider it invalid
+    const MAX_DISTANCE_THRESHOLD = 20; // kilometers
+    if (minDistance > MAX_DISTANCE_THRESHOLD) {
+      console.warn('[SERVICES/MAPSERVICE] Closest town is too far:', minDistance, 'km from', closestTown);
+      return null;
+    }
+
+    console.log('[SERVICES/MAPSERVICE] Found closest town:', closestTown, 'at distance:', minDistance.toFixed(2), 'km');
+    return closestTown;
+
+  } catch (err) {
+    console.error('[SERVICES/MAPSERVICE] checkTownByPostalCode error:', err);
+    return null;
+  }
+}
+
 module.exports = {
+  checkTownByPostalCode,
   /**
    * Get town data with coordinates, average prices by room type, and unique colors
    * @returns {Promise<Array>} Array of town objects with name, lat, lng, avgPrice (by room type), color

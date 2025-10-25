@@ -211,6 +211,15 @@ class ListingValidationService {
       validatedData.postal_code = postalValidation.postalCode;
     }
 
+    // Validate town if provided
+    if (listingData.town !== undefined) {
+      if (listingData.town && typeof listingData.town === 'string' && listingData.town.trim() !== '') {
+        validatedData.town = listingData.town.trim().toUpperCase();
+      } else {
+        validatedData.town = null;
+      }
+    }
+
     // Determine review status
     if (priceValidation.isValid) {
       const reviewStatus = this.determineReviewStatus(priceValidation.price);
@@ -260,6 +269,15 @@ class ListingValidationService {
         validatedData.status = reviewStatus.status;
         validatedData.review_status = reviewStatus.reviewStatus;
         validatedData.review_message = reviewStatus.message;
+      }
+    }
+
+    // Validate town if provided
+    if (updateData.town !== undefined) {
+      if (updateData.town && typeof updateData.town === 'string' && updateData.town.trim() !== '') {
+        validatedData.town = updateData.town.trim().toUpperCase();
+      } else {
+        validatedData.town = null;
       }
     }
 
