@@ -126,6 +126,18 @@ module.exports.syncGovData = async function (req) {
   }
 };
 
+module.exports.getApiLogs = async function (req) {
+  console.log('[CONTROLLER/API-MGMT] getApiLogs called');
+  try {
+    const ApiLoggerModel = require('../model/ApiLoggerModel');
+    const logs = await ApiLoggerModel.getRecentLogs(20);
+    return { status: 200, body: { success: true, logs } };
+  } catch (err) {
+    console.error('[CONTROLLER/API-MGMT] getApiLogs error:', err);
+    return { status: 500, body: { message: 'Failed to fetch API logs' } };
+  }
+};
+
 module.exports.testGovtApiKey = async function (req) {
   console.log('[CONTROLLER/API-MGMT] testGovtApiKey called');
 

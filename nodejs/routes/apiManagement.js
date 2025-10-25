@@ -5,9 +5,6 @@ const path = require('path');
 const apiManagementController = require('../controller/apiManagementController');
 const { logGovtApiKeyUpdate } = require('../services/govtApiService');
 const AuthMiddleware = require('../middleware/AuthMiddleware');
-const ApiLoggerModel = require('../model/ApiLoggerModel');
-
-const { saveSyncSchedule, getScheduleMap, getSyncSchedule } = require('../model/SchedulerModel');
 const { scheduleDataSync } = require('../services/schedulerService');
 
 // Basic test endpoint
@@ -223,6 +220,11 @@ router.post('/updateSyncSchedule', async (req, res) => {
 });
 
 router.get('/getApiLogs', AuthMiddleware.verifyTokenMiddleware, AuthMiddleware.isAdmin, async (req, res) => {
-  const logs = await ApiLoggerModel.getRecentLogs(20);
-  res.json({ success: true, logs });
+  try {
+    const result = await apiManagementController.getApiLogs(req);
+    res.status(result.status).json(result.body);
+  } catch (err) {
+    console.error('[ROUTES/API-MGMT] getApiLogs error:', err);
+    res.status(500).json({ message: 'Internal server error' });
+  }
 });
