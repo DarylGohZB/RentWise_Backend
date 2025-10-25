@@ -15,6 +15,7 @@ module.exports = {
         description TEXT,
         address TEXT NOT NULL,
         postal_code VARCHAR(10),
+        town VARCHAR(100),
         price DECIMAL(10,2) NOT NULL,
         property_type ENUM('HDB') NOT NULL,
         rooms INT,
@@ -28,6 +29,19 @@ module.exports = {
                 FOREIGN KEY (landlord_id) REFERENCES users(user_id) ON DELETE CASCADE
       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
     `);
+
+    // Add town column if it doesn't exist (migration for existing tables)
+    try {
+      await p.execute(`
+        ALTER TABLE listings ADD COLUMN town VARCHAR(100) AFTER postal_code;
+      `);
+      console.log('[DB] Added town column to listings table');
+    } catch (err) {
+      // Column already exists, ignore error
+      if (err.code !== 'ER_DUP_FIELDNAME') {
+        console.warn('[DB] Error adding town column:', err.message);
+      }
+    }
 
     console.log('[DB] Listings table ensured');
   },
@@ -131,6 +145,65 @@ module.exports = {
       return rows;
     } catch (err) {
       console.error('[DB] getAllListings error:', err);
+      return [];
+    }
+  },
+
+  /**
+   * Filter listings based on room type, town, min/max price
+   */
+  filterListings: async function (filters) {
+    try {
+      const whereConditions = [];
+      const params = [];
+
+      // Always filter for active and approved listings (same as getAllListings)
+      whereConditions.push('l.status = ?');
+      params.push('active');
+      
+      whereConditions.push('l.review_status = ?');
+      params.push('approved');
+
+      // Filter by room type (rooms column) - int:1-6
+      // Only filter if roomType is provided and valid
+      if (filters.roomType && filters.roomType >= 1 && filters.roomType <= 6) {
+        whereConditions.push('l.rooms = ?');
+        params.push(filters.roomType);
+      }
+
+      // Filter by town (only if town is provided and not empty)
+      // Also handle case where database town field is empty/null
+      if (filters.town && filters.town.trim() !== '') {
+        whereConditions.push('l.town = ? AND l.town IS NOT NULL AND l.town != ""');
+        params.push(filters.town.toUpperCase());
+      }
+
+      // Filter by price range
+      if (filters.minPrice !== null && filters.minPrice !== undefined) {
+        whereConditions.push('l.price >= ?');
+        params.push(filters.minPrice);
+      }
+
+      if (filters.maxPrice !== null && filters.maxPrice !== undefined) {
+        whereConditions.push('l.price <= ?');
+        params.push(filters.maxPrice);
+      }
+
+      const whereClause = `WHERE ${whereConditions.join(' AND ')}`;
+
+      // Use exact same SQL format as getAllListings
+      const [rows] = await pool.execute(
+        `SELECT l.*, u.displayName as landlord_name
+         FROM listings l
+         LEFT JOIN users u ON l.landlord_id = u.user_id
+         ${whereClause}
+         ORDER BY l.created_date DESC
+         LIMIT 100`,
+        params
+      );
+      return rows;
+    } catch (err) {
+      console.error('[DB] filterListings error:', err);
       return [];
     }
   },
@@ -249,7 +322,7 @@ module.exports = {
 
       const validatedData = validation.validatedData;
       const allowedFields = [
-        'title', 'description', 'address', 'postal_code', 'price', 'property_type',
+        'title', 'description', 'address', 'postal_code', 'town', 'price', 'property_type',
         'rooms', 'images', 'availability_date', 'status', 'review_status'
       ];
 
