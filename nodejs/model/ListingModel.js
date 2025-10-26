@@ -67,6 +67,7 @@ module.exports = {
         description,
         address,
         postal_code,
+        town,
         price,
         property_type,
         rooms,
@@ -83,11 +84,11 @@ module.exports = {
       }
 
       const [result] = await pool.execute(
-        `INSERT INTO listings (landlord_id, title, description, address, postal_code, price, 
+        `INSERT INTO listings (landlord_id, title, description, address, postal_code, town, price, 
          property_type, rooms, images, availability_date, 
          status, review_status) 
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-        [landlord_id, title, description, address, postal_code, price, property_type,
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [landlord_id, title, description, address, postal_code, town, price, property_type,
           rooms, imagesJson, availability_date,
           status, review_status]
       );
