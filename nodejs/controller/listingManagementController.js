@@ -135,6 +135,59 @@ class ListingManagementController {
     }
   }
 
+  /** Flag a listing (ADMIN) */
+  async flagListing(req, res) {
+    try {
+      const listingId = Number(req.params.listingId);
+      const { review_notes } = req.body || {};
+      const result = await listingManagementService.flagListing(listingId, review_notes);
+      return res.json(result);
+    } catch (error) {
+      const msg = error?.message || '';
+      const code = /not found/i.test(msg) ? 404
+                 : /invalid|required/i.test(msg) ? 400
+                 : 500;
+      console.error('[CONTROLLER/LISTING-MANAGEMENT] flagListing error:', msg);
+      return res.status(code).json({ success: false, error: msg || 'Internal server error' });
+    }
+  }
+
+  /** GET /pending/flagged */
+  async getFlaggedListings(req, res) {
+    try {
+      const limit = Number(req.query.limit) || 50;
+      const offset = Number(req.query.offset) || 0;
+      res.json(await listingManagementService.getFlaggedListings(limit, offset));
+    } catch (error) {
+      console.error('[CONTROLLER/LISTING-MANAGEMENT] getFlaggedListings error:', error);
+      res.status(500).json({ success: false, error: 'Internal server error' });
+    }
+  }
+
+  /** GET /pending/pricing-issues */
+  async getPricingIssueListings(req, res) {
+    try {
+      const limit = Number(req.query.limit) || 50;
+      const offset = Number(req.query.offset) || 0;
+      res.json(await listingManagementService.getPricingIssueListings(limit, offset));
+    } catch (error) {
+      console.error('[CONTROLLER/LISTING-MANAGEMENT] getPricingIssueListings error:', error);
+      res.status(500).json({ success: false, error: 'Internal server error' });
+    }
+  }
+
+  /** GET /pending/all  (flagged + pricing issues) */
+  async getAllPendingListings(req, res) {
+    try {
+      const limit = Number(req.query.limit) || 50;
+      const offset = Number(req.query.offset) || 0;
+      res.json(await listingManagementService.getAllPendingListings(limit, offset));
+    } catch (error) {
+      console.error('[CONTROLLER/LISTING-MANAGEMENT] getAllPendingListings error:', error);
+      res.status(500).json({ success: false, error: 'Internal server error' });
+    }
+  }
+
   /**
    * Get review statistics
    */

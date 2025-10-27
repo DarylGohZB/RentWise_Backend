@@ -24,7 +24,7 @@ module.exports = {
         created_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
         status ENUM('active', 'inactive', 'rented', 'pending_review', 'rejected') DEFAULT 'active',
-                review_status ENUM('pending', 'approved', 'rejected', 'needs_info') DEFAULT 'pending',
+                review_status ENUM('pending', 'approved', 'rejected', 'flagged') DEFAULT 'pending',
                 review_notes TEXT,
                 FOREIGN KEY (landlord_id) REFERENCES users(user_id) ON DELETE CASCADE
       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
@@ -67,6 +67,7 @@ module.exports = {
         description,
         address,
         postal_code,
+        town,
         price,
         property_type,
         rooms,
@@ -83,11 +84,11 @@ module.exports = {
       }
 
       const [result] = await pool.execute(
-        `INSERT INTO listings (landlord_id, title, description, address, postal_code, price, 
+        `INSERT INTO listings (landlord_id, title, description, address, postal_code, town, price, 
          property_type, rooms, images, availability_date, 
          status, review_status) 
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-        [landlord_id, title, description, address, postal_code, price, property_type,
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [landlord_id, title, description, address, postal_code, town, price, property_type,
           rooms, imagesJson, availability_date,
           status, review_status]
       );
@@ -392,6 +393,74 @@ module.exports = {
     }
   },
 
+  // Get ALL pending listings by main status, regardless of review_status
+  getAllPendingByStatus: async function (limit = 50, offset = 0) {
+    const limitInt = Number(limit) || 50;
+    const offsetInt = Number(offset) || 0;
+
+    const sql = `
+      SELECT l.*, u.displayName AS landlord_name, u.email AS landlord_email
+      FROM listings l
+      LEFT JOIN users u ON l.landlord_id = u.user_id
+      WHERE l.status = 'pending_review'
+      ORDER BY COALESCE(l.updated_date, l.created_date) DESC
+      LIMIT ${limitInt} OFFSET ${offsetInt}
+    `;
+    const [rows] = await pool.execute(sql);
+    return rows;
+  },
+  
+  /**
+  * Get flagged listings (admin)
+  */
+  getFlaggedListings: async function (limit = 50, offset = 0) {
+    try {
+      const limitInt = parseInt(limit);
+      const offsetInt = parseInt(offset);
+      const [rows] = await pool.execute(
+        `
+        SELECT l.*, u.email AS landlord_email, u.displayName AS landlord_name
+        FROM listings l
+        LEFT JOIN users u ON l.landlord_id = u.user_id
+        WHERE l.review_status = 'flagged'
+        ORDER BY l.updated_date DESC
+        LIMIT ${limitInt} OFFSET ${offsetInt}
+        `
+      );
+      return rows;
+    } catch (err) {
+      console.error('[DB] getFlaggedListings error:', err);
+      return [];
+    }
+  },
+
+  /**
+  * Get pricing issue listings (admin)
+  * Defined as: review_status='pending' AND (price < 500 OR price > 5000)
+  */
+  getPricingIssueListings: async function (limit = 50, offset = 0) {
+    try {
+      const limitInt = parseInt(limit);
+      const offsetInt = parseInt(offset);
+      const [rows] = await pool.execute(
+        `
+        SELECT l.*, u.email AS landlord_email, u.displayName AS landlord_name
+        FROM listings l
+        LEFT JOIN users u ON l.landlord_id = u.user_id
+        WHERE l.review_status = 'pending' AND (l.price < 500 OR l.price > 5000)
+        ORDER BY l.created_date ASC
+        LIMIT ${limitInt} OFFSET ${offsetInt}
+        `
+      );
+      return rows;
+    } catch (err) {
+      console.error('[DB] getPricingIssueListings error:', err);
+      return [];
+    }
+  },
+
+
+
   /**
    * Get listing statistics for a landlord
    */
@@ -465,7 +534,7 @@ module.exports = {
           SUM(CASE WHEN review_status = 'pending' THEN 1 ELSE 0 END) as pending_reviews,
           SUM(CASE WHEN review_status = 'approved' THEN 1 ELSE 0 END) as approved_listings,
           SUM(CASE WHEN review_status = 'rejected' THEN 1 ELSE 0 END) as rejected_listings,
-          SUM(CASE WHEN review_status = 'needs_info' THEN 1 ELSE 0 END) as needs_info_listings
+          SUM(CASE WHEN review_status = 'flagged' THEN 1 ELSE 0 END) as flagged_listings
         FROM listings
       `);
 
@@ -499,22 +568,19 @@ module.exports = {
     try {
       const { review_status, review_notes } = reviewData;
 
-      if (!['approved', 'rejected', 'needs_info'].includes(review_status)) {
+      if (!['approved', 'rejected', 'flagged'].includes(review_status)) {
         return { ok: false, error: 'Invalid review status' };
       }
 
-      // Determine the listing status based on review
+      // derive status
       let status = 'active';
-      if (review_status === 'rejected') {
-        status = 'rejected';
-      } else if (review_status === 'needs_info') {
-        status = 'pending_review';
-      }
+      if (review_status === 'rejected') status = 'rejected';
+      else if (review_status === 'flagged') status = 'pending_review';
 
       const [result] = await pool.execute(
-        `UPDATE listings 
-         SET review_status = ?, review_notes = ?, status = ?
-         WHERE listing_id = ?`,
+        `UPDATE listings
+        SET review_status = ?, review_notes = ?, status = ?
+        WHERE listing_id = ?`,
         [review_status, review_notes, status, listingId]
       );
 
@@ -522,16 +588,11 @@ module.exports = {
         return { ok: false, error: 'Listing not found' };
       }
 
-      return {
-        ok: true,
-        affectedRows: result.affectedRows,
-        status: status,
-        reviewStatus: review_status
-      };
+      return { ok: true, affectedRows: result.affectedRows, status, reviewStatus: review_status };
     } catch (err) {
       console.error('[DB] updateListingReview error:', err);
       return { ok: false, error: err };
-    }
+    } 
   },
 
   /**

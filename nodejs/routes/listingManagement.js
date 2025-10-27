@@ -21,6 +21,16 @@ router.post('/reject/:listingId', AuthMiddleware.verifyTokenMiddleware, AuthMidd
 // Request more information from landlord (Admin only)
 router.post('/request-info/:listingId', AuthMiddleware.verifyTokenMiddleware, AuthMiddleware.isAdmin, listingManagementController.requestMoreInfo);
 
+// Moderation queues (ADMIN)
+router.get('/pending/all', AuthMiddleware.verifyTokenMiddleware, AuthMiddleware.isAdmin, listingManagementController.getAllPendingListings);
+
+router.get('/pending/flagged', AuthMiddleware.verifyTokenMiddleware, AuthMiddleware.isAdmin, listingManagementController.getFlaggedListings);
+
+router.get('/pending/pricing-issues', AuthMiddleware.verifyTokenMiddleware, AuthMiddleware.isAdmin, listingManagementController.getPricingIssueListings);
+
+// Flag a listing (ADMIN)
+router.post('/flag/:listingId', AuthMiddleware.verifyTokenMiddleware, AuthMiddleware.isAdmin, listingManagementController.flagListing);
+
 // Get review statistics (Admin only)
 
 router.get('/stats', AuthMiddleware.verifyTokenMiddleware, AuthMiddleware.isAdmin, listingManagementController.getStatistics);

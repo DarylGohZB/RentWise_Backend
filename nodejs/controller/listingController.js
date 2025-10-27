@@ -15,7 +15,9 @@ module.exports = {
     const listingData = req.body || {};
     
     // Use authenticated user's ID as landlord_id
-    const landlordId = req.user.user_id;
+    const userRole = (req.user?.userRole || '').toUpperCase();
+    // add role
+    const landlordId = userRole === 'ADMIN' ? null : req.user?.user_id;
     listingData.landlord_id = landlordId;
     
     console.log('[CONTROLLER/LISTING] createListing attempt by authenticated user:', landlordId);
@@ -350,49 +352,40 @@ module.exports = {
    */
   deleteListing: async function (req) {
     const { listingId } = req.params;
-    const landlordId = req.user?.user_id; // Get from authenticated user
+
+    // Force ADMIN to go straight to the admin delete path
+    const userRole = (req.user?.userRole || '').toUpperCase();
+    const landlordId = userRole === 'ADMIN' ? null : req.user?.user_id;
 
     if (!listingId) {
       return { status: 400, body: { message: 'listingId is required' } };
     }
 
     try {
-      // If user is authenticated, verify ownership
+      if (userRole === 'ADMIN') {
+        const result = await listingService.deleteListing(listingId);
+        if (result.ok) return { status: 200, body: { message: 'Listing deleted successfully' } };
+        if (result.error === 'Listing not found') return { status: 404, body: { message: 'Listing not found' } };
+        return { status: 500, body: { message: 'Failed to delete listing', error: result.error } };
+      }
+
+      // landlord path (unchanged)
       if (landlordId) {
         const result = await listingService.deleteListingByLandlord(listingId, landlordId);
-        
-        if (result.ok) {
-          console.log('[CONTROLLER/LISTING] deleteListing successful:', listingId);
-          return { status: 200, body: { message: 'Listing deleted successfully' } };
-        }
-        
+        if (result.ok) return { status: 200, body: { message: 'Listing deleted successfully' } };
         if (result.error === 'Listing not found or not owned by landlord') {
           return { status: 403, body: { message: 'You can only delete your own listings' } };
         }
-        
-        console.error('[CONTROLLER/LISTING] deleteListing failed:', result.error);
-        return { status: 500, body: { message: 'Failed to delete listing', error: result.error } };
-      } else {
-        // Fallback to admin delete (no ownership check)
-        const result = await listingService.deleteListing(listingId);
-        
-        if (result.ok) {
-          console.log('[CONTROLLER/LISTING] deleteListing successful:', listingId);
-          return { status: 200, body: { message: 'Listing deleted successfully' } };
-        }
-        
-        if (result.error === 'Listing not found') {
-          return { status: 404, body: { message: 'Listing not found' } };
-        }
-        
-        console.error('[CONTROLLER/LISTING] deleteListing failed:', result.error);
         return { status: 500, body: { message: 'Failed to delete listing', error: result.error } };
       }
+
+      return { status: 401, body: { message: 'Unauthorized' } };
     } catch (err) {
       console.error('[CONTROLLER/LISTING] deleteListing error:', err);
       return { status: 500, body: { message: 'Internal server error' } };
     }
   },
+
 
   /**
    * Get listing statistics for a landlord

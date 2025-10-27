@@ -193,6 +193,47 @@ RentWise Admin Team
     }
   }
 
+  /** Flag a listing (moves it to pending review with review_status='flagged') */
+  async flagListing(listingId, reviewNotes = 'Flagged by admin for content moderation') {
+    console.log('[SERVICE/LISTING-MANAGEMENT] flagListing listingId=', listingId);
+    if (!listingId || isNaN(listingId)) throw new Error('Invalid listing ID');
+
+    const result = await ListingModel.updateListingReview(listingId, {
+      review_status: 'flagged',
+      review_notes: reviewNotes
+    });
+
+    if (!result || result.ok === false) {
+      throw new Error(result?.error || 'Failed to flag listing');
+    }
+
+    return {
+      success: true,
+      message: 'Listing flagged for moderation',
+      listingId: Number(listingId),
+      status: result.status,
+      reviewStatus: result.reviewStatus
+    };
+  }
+
+  /** Get flagged listings */
+  async getFlaggedListings(limit = 50, offset = 0) {
+    const listings = await ListingModel.getFlaggedListings(limit, offset);
+    return { success: true, listings, count: listings.length, limit, offset };
+  }
+
+  /** Get pricing issue listings */
+  async getPricingIssueListings(limit = 50, offset = 0) {
+    const listings = await ListingModel.getPricingIssueListings(limit, offset);
+    return { success: true, listings, count: listings.length, limit, offset };
+  }
+
+  /** Get "All Pending Listings" = flagged + pricing issue */
+  async getAllPendingListings(limit = 50, offset = 0) {
+    const listings = await ListingModel.getAllPendingByStatus(limit, offset);
+    return { success: true, listings, count: listings.length, limit, offset };
+  }
+
   /**
    * Get review statistics
    */
