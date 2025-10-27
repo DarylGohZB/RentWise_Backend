@@ -22,7 +22,8 @@ module.exports = {
     // Insert default admin user if not exists
     await p.execute(`
       INSERT IGNORE INTO users (displayName, email, passwordHash, userRole)
-      VALUES ('admin', 'admin@admin.com', SHA2('password', 256), 'ADMIN');
+      VALUES 
+      ('admin1', 'admin1@gmail.com', SHA2('Admin1234', 256), 'ADMIN');
     `);
 
     console.log('[DB] Users table ensured');

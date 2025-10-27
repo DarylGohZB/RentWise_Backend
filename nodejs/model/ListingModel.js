@@ -23,8 +23,8 @@ module.exports = {
         availability_date DATE,
         created_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-        status ENUM('active', 'inactive', 'rented', 'pending_review', 'rejected') DEFAULT 'active',
-                review_status ENUM('pending', 'approved', 'rejected', 'flagged') DEFAULT 'pending',
+        status ENUM('active', 'inactive', 'rented', 'pending_review', 'rejected', 'flagged') DEFAULT 'active',
+                review_status ENUM('pending', 'approved', 'rejected', 'needs_info', 'flagged') DEFAULT 'pending',
                 review_notes TEXT,
                 FOREIGN KEY (landlord_id) REFERENCES users(user_id) ON DELETE CASCADE
       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
@@ -41,6 +41,26 @@ module.exports = {
       if (err.code !== 'ER_DUP_FIELDNAME') {
         console.warn('[DB] Error adding town column:', err.message);
       }
+    }
+
+    // Update status ENUM to include 'flagged' if it doesn't exist
+    try {
+      await p.execute(`
+        ALTER TABLE listings MODIFY status ENUM('active', 'inactive', 'rented', 'pending_review', 'rejected', 'flagged') DEFAULT 'active';
+      `);
+      console.log('[DB] Updated status ENUM to include flagged');
+    } catch (err) {
+      console.warn('[DB] Error updating status ENUM:', err.message);
+    }
+
+    // Update review_status ENUM to include 'flagged' and 'needs_info' if they don't exist
+    try {
+      await p.execute(`
+        ALTER TABLE listings MODIFY review_status ENUM('pending', 'approved', 'rejected', 'needs_info', 'flagged') DEFAULT 'pending';
+      `);
+      console.log('[DB] Updated review_status ENUM to include flagged and needs_info');
+    } catch (err) {
+      console.warn('[DB] Error updating review_status ENUM:', err.message);
     }
 
     console.log('[DB] Listings table ensured');

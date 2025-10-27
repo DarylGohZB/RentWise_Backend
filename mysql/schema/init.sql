@@ -51,8 +51,8 @@ CREATE TABLE IF NOT EXISTS listings (
   availability_date DATE,
   created_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  status ENUM('active', 'inactive', 'rented', 'pending_review', 'rejected') DEFAULT 'active',
-  review_status ENUM('pending', 'approved', 'rejected', 'needs_info') DEFAULT 'pending',
+  status ENUM('active', 'inactive', 'rented', 'pending_review', 'rejected', 'flagged') DEFAULT 'active',
+  review_status ENUM('pending', 'approved', 'rejected', 'needs_info', 'flagged') DEFAULT 'pending',
   review_notes TEXT,
   FOREIGN KEY (landlord_id) REFERENCES users(user_id) ON DELETE CASCADE
 );
