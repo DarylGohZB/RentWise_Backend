@@ -1,4 +1,5 @@
-const { getCount, getSample, searchByTown, getTownStats } = require('../model/GovHouseDataModel');
+const { getCount, getSample, searchByTown } = require('../model/GovHouseDataModel');
+const govListingService = require('./govListingService');
 
 module.exports = {
 	getGovCount: async function () {
@@ -10,9 +11,11 @@ module.exports = {
 	searchGovByTown: async function (filters) {
 		return { rows: await searchByTown(filters) };
 	},
-  townStats: async function (townName) {
-    return { stats: await getTownStats(townName) };
-  },
+	townStats: async function (townName) {
+		// Route through the govListingService which in turn uses the GovHouse model.
+		const stats = await govListingService.getTownStats(townName);
+		return { stats };
+	},
 };
 
 

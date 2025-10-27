@@ -42,7 +42,6 @@ module.exports = {
         listingData.town = town;
         console.log('[CONTROLLER/LISTING] Found town:', town, 'for postal code:', listingData.postal_code);
       }
-
       const result = await listingService.createListing(listingData);
       
       if (!result.ok) {

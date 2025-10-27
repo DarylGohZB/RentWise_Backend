@@ -2,7 +2,6 @@
 const searchService = require('../services/searchService');
 const recommendationService = require('../services/recommendationService');
 const geocodingService = require('../services/geocodingService');
-const { getTownStats } = require('../model/GovHouseDataModel');
 
 module.exports.handleTest = async function (req) {
   console.log('[CONTROLLER/SEARCHCONTROLLER] handleTest called');
@@ -107,7 +106,8 @@ module.exports.recommendTown = async function (req) {
 
   let stats = null;
   if (chosenTownName) {
-    stats = await getTownStats(chosenTownName);
+    const res = await searchService.townStats(chosenTownName);
+    stats = res && res.stats ? res.stats : null;
   }
   // Use this if you want full information
   // return {

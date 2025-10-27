@@ -3,6 +3,8 @@ const router = express.Router();
 const apiManagementController = require('../controller/apiManagementController');
 const schedulerController = require('../controller/schedulerController');
 const AuthMiddleware = require('../middleware/AuthMiddleware');
+const fs = require('fs');
+const path = require('path');
 
 // Basic test endpoint
 router.all('/test', async (req, res) => {
@@ -70,6 +72,50 @@ router.post('/gov/sync', async (req, res) => {
   } catch (err) {
     console.error('[ROUTES/API-MGMT] /gov/sync error:', err);
     res.status(500).json({ error: 'Failed to sync gov data' });
+  }
+});
+
+router.post('/gov/extract', async (req, res) => {
+  console.log('[ROUTES/API-MGMT] /gov/extract called');
+  try {
+    const result = await apiManagementController.extractGovDataToCSV(req);
+    console.log('[ROUTES/API-MGMT] /gov/extract result:', result);
+    res.json(result);
+  } catch (err) {
+    console.error('[ROUTES/API-MGMT] /gov/extract error:', err);
+    res.status(500).json({ error: 'Failed to extract gov data to CSV' });
+  }
+});
+
+router.get('/gov/downloadLatestCsv', async (req, res) => {
+  try {
+    const exportsDir = path.join(__dirname, '../exports');
+
+    // Get all CSV files
+    const files = fs.readdirSync(exportsDir)
+      .filter(file => file.endsWith('.csv'))
+      .map(file => ({
+        name: file,
+        time: fs.statSync(path.join(exportsDir, file)).mtime.getTime()
+      }))
+      .sort((a, b) => b.time - a.time); // Descending by modified time
+
+    if (files.length === 0) {
+      return res.status(404).json({ error: 'No CSV files found' });
+    }
+
+    const latestFile = files[0].name;
+    const filePath = path.join(exportsDir, latestFile);
+
+    res.download(filePath, latestFile, err => {
+      if (err) {
+        console.error('[ROUTES/API-MGMT] Error sending file:', err);
+        res.status(500).json({ error: 'Failed to download file' });
+      }
+    });
+  } catch (err) {
+    console.error('[ROUTES/API-MGMT] /gov/downloadLatestCsv error:', err);
+    res.status(500).json({ error: 'Internal server error' });
   }
 });
 
