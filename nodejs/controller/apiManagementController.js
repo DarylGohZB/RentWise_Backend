@@ -10,6 +10,10 @@ const {
 const govtApiService = require('../services/govtApiService');
 const axios = require('axios');
 
+const fs = require('fs');
+const path = require('path');
+const { createObjectCsvWriter } = require('csv-writer');
+
 const DATASET_ID = 'd_c9f57187485a850908655db0e8cfe651';
 
 module.exports.handleTest = async function (req) {
@@ -126,6 +130,41 @@ module.exports.syncGovData = async function (req) {
   }
 };
 
+module.exports.extractGovDataToCSV = async function (req) {
+  const max = 500; // Hardcoded limit to avoid huge datasets
+  const pageSize = req?.query?.pageSize ? Number(req.query.pageSize) : undefined;
+  console.log(`[CONTROLLER/API-MGMT] extractGovDataToCSV called (max=${max}, pageSize=${pageSize})`);
+
+  try {
+    console.log('[CONTROLLER/API-MGMT] Ensuring GovHouseData table exists...');
+    await ensureTable();
+
+    console.log('[CONTROLLER/API-MGMT] Fetching records from data.gov.sg...');
+    const rows = await govtApiService.fetchAll(DATASET_ID, pageSize, max);
+    console.log(`[CONTROLLER/API-MGMT] Fetched ${rows.length} records.`);
+
+    const fileName = `gov-data-${Date.now()}.csv`;
+    const csvFilePath = path.join(__dirname, '../exports/', fileName);
+
+    if (rows.length > 0) {
+      const headers = Object.keys(rows[0]).map(key => ({ id: key, title: key }));
+      const csvWriter = createObjectCsvWriter({ path: csvFilePath, header: headers });
+
+      await csvWriter.writeRecords(rows);
+      console.log(`[CONTROLLER/API-MGMT] CSV file written to ${csvFilePath}`);
+    }
+
+    return {
+      ok: true,
+      fetched: rows.length,
+      message: `CSV generated successfully with ${rows.length} records.`,
+    };
+  } catch (err) {
+    console.error('[CONTROLLER/API-MGMT] extractGovDataToCSV error:', err);
+    throw err;
+  }
+};
+
 module.exports.getApiLogs = async function (req) {
   console.log('[CONTROLLER/API-MGMT] getApiLogs called');
   try {
@@ -171,13 +210,13 @@ module.exports.testGovtApiKey = async function (req) {
 
 module.exports.updateApiKey = async function (req) {
   console.log('[CONTROLLER/API-MGMT] updateApiKey called');
-  
+
   try {
     const { apiKey } = req.body || {};
     if (!apiKey || typeof apiKey !== 'string' || apiKey.trim().length === 0) {
-      return { 
-        status: 400, 
-        body: { ok: false, message: 'Missing apiKey in request body' } 
+      return {
+        status: 400,
+        body: { ok: false, message: 'Missing apiKey in request body' }
       };
     }
 
@@ -213,16 +252,16 @@ module.exports.updateApiKey = async function (req) {
       throw new Error('Failed to log key update in DB');
     }
 
-    return { 
-      status: 200, 
-      body: { ok: true, message: 'API key saved and last update time logged' } 
+    return {
+      status: 200,
+      body: { ok: true, message: 'API key saved and last update time logged' }
     };
 
   } catch (err) {
     console.error('[CONTROLLER/API-MGMT] updateApiKey error:', err);
-    return { 
-      status: 500, 
-      body: { ok: false, message: 'Failed to update API key' } 
+    return {
+      status: 500,
+      body: { ok: false, message: 'Failed to update API key' }
     };
   }
 };
