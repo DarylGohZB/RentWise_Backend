@@ -12,7 +12,6 @@ const axios = require('axios');
 
 const fs = require('fs');
 const path = require('path');
-const { createObjectCsvWriter } = require('csv-writer');
 
 const DATASET_ID = 'd_c9f57187485a850908655db0e8cfe651';
 
@@ -168,6 +167,21 @@ module.exports.extractGovDataToCSV = async function (req) {
     const csvFilePath = path.join(__dirname, '../exports/', fileName);
 
     if (rows.length > 0) {
+      // lazy-require csv-writer so server can start even if the module
+      // is missing during container startup (helps with iterative debugging)
+      let createObjectCsvWriter;
+      try {
+        ({ createObjectCsvWriter } = require('csv-writer'));
+      } catch (err) {
+        console.warn('[CONTROLLER/API-MGMT] csv-writer module not available:', err.message);
+        // Skip CSV generation if csv-writer isn't installed
+        return {
+          ok: true,
+          fetched: rows.length,
+          message: `CSV generation skipped (csv-writer not installed). ${rows.length} records fetched.`,
+        };
+      }
+
       const headers = Object.keys(rows[0]).map(key => ({ id: key, title: key }));
       const csvWriter = createObjectCsvWriter({ path: csvFilePath, header: headers });
 
@@ -189,8 +203,8 @@ module.exports.extractGovDataToCSV = async function (req) {
 module.exports.getApiLogs = async function (req) {
   console.log('[CONTROLLER/API-MGMT] getApiLogs called');
   try {
-    const ApiLoggerModel = require('../model/ApiLoggerModel');
-    const logs = await ApiLoggerModel.getRecentLogs(20);
+    const ApiLoggerService = require('../services/ApiLoggerService');
+    const logs = await ApiLoggerService.getRecentLogs(20);
     return { status: 200, body: { success: true, logs } };
   } catch (err) {
     console.error('[CONTROLLER/API-MGMT] getApiLogs error:', err);

@@ -1,4 +1,4 @@
-const ApiLoggerModel = require('../model/ApiLoggerModel');
+const ApiLoggerService = require('../services/ApiLoggerService');
 
 module.exports = function apiLogger(req, res, next) {
   const start = process.hrtime();
@@ -41,9 +41,9 @@ module.exports = function apiLogger(req, res, next) {
       }
     }
 
-    // Save API activity
+    // Save API activity using the service layer
     try {
-      await ApiLoggerModel.logApiActivity({
+      await ApiLoggerService.logApiActivity({
         operation: `${req.method} ${req.originalUrl}`,
         status: statusCode,
         recordSummary,
@@ -51,7 +51,7 @@ module.exports = function apiLogger(req, res, next) {
         errorMessage
       });
     } catch (err) {
-      console.error('[LOGGER] Failed to log API activity:', err);
+      console.error('[LOGGER] Failed to log API activity via service:', err);
     }
   });
 

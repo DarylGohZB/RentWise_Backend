@@ -28,4 +28,15 @@ async function logApiWrapper(operationLabel, handlerFn) {
   }
 }
 
-module.exports = { logApiWrapper };
+// Simple passthrough logging function so callers (middleware/controllers)
+// can call a service-level API instead of touching the model directly.
+async function logApiActivity({ operation, status, recordSummary = '-', duration = null, errorMessage = null }) {
+  return ApiLoggerModel.logApiActivity({ operation, status, recordSummary, duration, errorMessage });
+}
+
+// Expose helper to retrieve recent logs via the service layer
+async function getRecentLogs(limit = 10) {
+  return ApiLoggerModel.getRecentLogs(limit);
+}
+
+module.exports = { logApiWrapper, logApiActivity, getRecentLogs };
