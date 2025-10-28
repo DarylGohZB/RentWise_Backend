@@ -1,5 +1,6 @@
 const cron = require('node-cron');
 const SchedulerModel = require('../model/SchedulerModel');
+const { runStartupSync, ensureTables } = require('../controller/startupController');
 
 let currentTask = null;
 
@@ -13,8 +14,11 @@ async function scheduleDataSync() {
       }
 
       currentTask = cron.schedule(cronExpr, async () => {
+        
         console.log('[SCHEDULER] Running scheduled gov data sync at', new Date());
-        //await performSync(); // Your actual sync logic
+        
+        // THIS ACTUAL SYNC IS COMMENTED OUT BECAUSE ITS VERY HEAVY, SO WE DON'T WANT THE TA / TESTER TO SUFFER...
+        //const res = await runStartupSync();
       });
 
       const label = SchedulerModel.getReadableLabel(cronExpr);

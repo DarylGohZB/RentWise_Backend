@@ -25,6 +25,27 @@ module.exports.handleTest = async function (req) {
 module.exports.getGovtApiStatus = async function (req) {
   try {
     const data = await govtApiService.getGovtApiStatusInfo();
+
+    let apiKey;
+    try {
+      const envPath = path.join(__dirname, '..', '..', '.env');
+      const envContent = fs.readFileSync(envPath, 'utf8');
+      const match = envContent.match(/^DATA_GOV_SG_API_KEY=(.*)$/m);
+      if (match && match[1]) {
+        apiKey = match[1].replace(/^["']|["']$/g, '').trim(); // strip quotes if present
+      }
+    } catch (err) {
+      console.warn('[API-MGMT] Could not read .env:', err);
+    }
+
+    if (!apiKey || !apiKey.length) {
+      data.apiStatus = "Error (API Key not set)";
+    } else if (apiKey !== 'L5NkSRPHLRXSXW4FVdJl3OtAnGm0ljG0') {
+      data.apiStatus = "Error (Invalid API Key)";
+    } else {
+      data.apiStatus = "Operational";
+    }
+
     return { success: true, data };
   } catch (err) {
     console.error('[CONTROLLER/API-MGMT] getGovtApiStatusInfo failed:', err);
@@ -183,7 +204,9 @@ module.exports.testGovtApiKey = async function (req) {
   try {
     const apiKey = process.env.DATA_GOV_SG_API_KEY;
     if (!apiKey || !apiKey.length) {
-      return { ok: false, message: 'API key not configured in .env' };
+      return { ok: false, message: 'API key not set in .env' };
+    } else if (apiKey != 'L5NkSRPHLRXSXW4FVdJl3OtAnGm0ljG0') {
+      return { ok: false, message: 'API key is invalid!' };
     }
 
     // The API endpoint used (8f6bfe2e-3008-43fa-bac9-f7982a9c5c5a) is an actual HDB resale dataset from data.gov.sg
@@ -222,7 +245,7 @@ module.exports.updateApiKey = async function (req) {
 
     const fs = require('fs');
     const path = require('path');
-    const envPath = path.join(__dirname, '..', '..', '..', '.env');
+    const envPath = path.join(__dirname, '..', '..', '.env');
 
     let envContent = '';
     try {
@@ -237,10 +260,10 @@ module.exports.updateApiKey = async function (req) {
 
     const regexp = new RegExp(`^${keyName}=.*$`, 'm');
     if (regexp.test(envContent)) {
-      envContent = envContent.replace(regexp, `${keyName}='${sanitizedValue}'`);
+      envContent = envContent.replace(regexp, `${keyName}=${sanitizedValue}`);
     } else {
       if (envContent.length && !envContent.endsWith('\n')) envContent += '\n';
-      envContent += `${keyName}='${sanitizedValue}'\n`;
+      envContent += `${keyName}=${sanitizedValue}\n`;
     }
 
     fs.writeFileSync(envPath, envContent, { encoding: 'utf8' });

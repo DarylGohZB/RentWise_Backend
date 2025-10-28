@@ -172,7 +172,19 @@ router.post('/gov/updateStatus', async (req, res) => {
 
 // Get API key (admin only)
 router.get('/getApiKey', AuthMiddleware.verifyTokenMiddleware, AuthMiddleware.isAdmin, (req, res) => {
-  const apiKey = process.env.DATA_GOV_SG_API_KEY;
+  const envPath = path.join(__dirname, '..', '..', '.env');
+
+  let apiKey;
+  try {
+    const envContent = fs.readFileSync(envPath, 'utf8');
+    const match = envContent.match(/^DATA_GOV_SG_API_KEY=(.*)$/m);
+    if (match && match[1]) {
+      apiKey = match[1].replace(/^["']|["']$/g, ''); // remove quotes if present
+    }
+  } catch (err) {
+    console.error('Error reading .env:', err);
+  }
+
   if (!apiKey) {
     return res.status(404).json({ success: false, message: 'API key not set' });
   }

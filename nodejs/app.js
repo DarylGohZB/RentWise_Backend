@@ -58,7 +58,7 @@ app.listen(port, async () => {
     console.log('[APP] Database tables ensured');
 
     // Comment these out after first startup
-    const res = await runStartupSync();
+    //const res = await runStartupSync();
     //console.log(`[APP] Startup sync completed: ${res.inserted} records processed.`);
      console.log(`[APP] Startup sync disabled for testing`);
 
