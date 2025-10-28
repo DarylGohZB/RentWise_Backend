@@ -12,6 +12,7 @@ const axios = require('axios');
 
 const fs = require('fs');
 const path = require('path');
+const { createObjectCsvWriter } = require('csv-writer');
 
 const DATASET_ID = 'd_c9f57187485a850908655db0e8cfe651';
 
@@ -167,21 +168,6 @@ module.exports.extractGovDataToCSV = async function (req) {
     const csvFilePath = path.join(__dirname, '../exports/', fileName);
 
     if (rows.length > 0) {
-      // lazy-require csv-writer so server can start even if the module
-      // is missing during container startup (helps with iterative debugging)
-      let createObjectCsvWriter;
-      try {
-        ({ createObjectCsvWriter } = require('csv-writer'));
-      } catch (err) {
-        console.warn('[CONTROLLER/API-MGMT] csv-writer module not available:', err.message);
-        // Skip CSV generation if csv-writer isn't installed
-        return {
-          ok: true,
-          fetched: rows.length,
-          message: `CSV generation skipped (csv-writer not installed). ${rows.length} records fetched.`,
-        };
-      }
-
       const headers = Object.keys(rows[0]).map(key => ({ id: key, title: key }));
       const csvWriter = createObjectCsvWriter({ path: csvFilePath, header: headers });
 
@@ -247,53 +233,11 @@ module.exports.testGovtApiKey = async function (req) {
 
 module.exports.updateApiKey = async function (req) {
   console.log('[CONTROLLER/API-MGMT] updateApiKey called');
-
   try {
     const { apiKey } = req.body || {};
-    if (!apiKey || typeof apiKey !== 'string' || apiKey.trim().length === 0) {
-      return {
-        status: 400,
-        body: { ok: false, message: 'Missing apiKey in request body' }
-      };
-    }
-
-    const fs = require('fs');
-    const path = require('path');
-    const envPath = path.join(__dirname, '..', '..', '.env');
-
-    let envContent = '';
-    try {
-      envContent = fs.readFileSync(envPath, 'utf8');
-    } catch {
-      console.warn('[CONTROLLER/API-MGMT] .env not found, will create a new one.');
-      envContent = '';
-    }
-
-    const keyName = 'DATA_GOV_SG_API_KEY';
-    const sanitizedValue = apiKey.replace(/\r?\n/g, '').trim();
-
-    const regexp = new RegExp(`^${keyName}=.*$`, 'm');
-    if (regexp.test(envContent)) {
-      envContent = envContent.replace(regexp, `${keyName}=${sanitizedValue}`);
-    } else {
-      if (envContent.length && !envContent.endsWith('\n')) envContent += '\n';
-      envContent += `${keyName}=${sanitizedValue}\n`;
-    }
-
-    fs.writeFileSync(envPath, envContent, { encoding: 'utf8' });
-    console.log('[CONTROLLER/API-MGMT] DATA_GOV_SG_API_KEY updated in .env');
-
-    // Log last key update time in DB using the service
-    const result = await govtApiService.logGovtApiKeyUpdate();
-    if (!result.success) {
-      throw new Error('Failed to log key update in DB');
-    }
-
-    return {
-      status: 200,
-      body: { ok: true, message: 'API key saved and last update time logged' }
-    };
-
+    // Delegate business logic to the service layer so controller remains a thin boundary
+    const result = await govtApiService.updateApiKey(apiKey);
+    return { status: result.status, body: result.body };
   } catch (err) {
     console.error('[CONTROLLER/API-MGMT] updateApiKey error:', err);
     return {

@@ -100,11 +100,63 @@ async function logGovtApiSync(status) {
   await GovtApiStatusModel.setLastSyncNow(status);
 }
 
+/**
+ * Update the DATA_GOV_SG_API_KEY in the repository .env file and
+ * record the key update timestamp in the DB (via GovtApiStatusModel).
+ * This moves the controller-level business logic into the service layer
+ * so controllers remain thin boundaries.
+ */
+async function updateApiKey(apiKey) {
+  try {
+    if (!apiKey || typeof apiKey !== 'string' || apiKey.trim().length === 0) {
+      return { status: 400, body: { ok: false, message: 'Missing apiKey in request body' } };
+    }
+
+    const fs = require('fs');
+    const path = require('path');
+    const envPath = path.join(__dirname, '..', '..', '.env');
+
+    let envContent = '';
+    try {
+      envContent = fs.readFileSync(envPath, 'utf8');
+    } catch {
+      // If .env doesn't exist, we'll create one
+      envContent = '';
+    }
+
+    const keyName = 'DATA_GOV_SG_API_KEY';
+    const sanitizedValue = apiKey.replace(/\r?\n/g, '').trim();
+
+    const regexp = new RegExp(`^${keyName}=.*$`, 'm');
+    if (regexp.test(envContent)) {
+      envContent = envContent.replace(regexp, `${keyName}=${sanitizedValue}`);
+    } else {
+      if (envContent.length && !envContent.endsWith('\n')) envContent += '\n';
+      envContent += `${keyName}=${sanitizedValue}\n`;
+    }
+
+    fs.writeFileSync(envPath, envContent, { encoding: 'utf8' });
+
+    // Log the key update in the DB (reuse existing helper)
+    const logRes = await logGovtApiKeyUpdate();
+    if (!logRes || !logRes.success) {
+      return { status: 500, body: { ok: false, message: 'Failed to log key update in DB' } };
+    }
+
+    return { status: 200, body: { ok: true, message: 'API key saved and last update time logged' } };
+  } catch (err) {
+    console.error('[Service] updateApiKey error:', err);
+    return { status: 500, body: { ok: false, message: 'Failed to update API key' } };
+  }
+}
+
 module.exports = {
   fetchPage,
   fetchAll,
   getGovtApiStatusInfo,
   logGovtApiKeyUpdate,
+  updateApiKey,
   logGovtApiSync,
 };
+
 
