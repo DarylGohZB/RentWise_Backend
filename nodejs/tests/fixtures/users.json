@@ -1,0 +1,53 @@
+{
+  "users": [
+    {
+      "user_id": 1,
+      "email": "admin@rentwise.com",
+      "displayName": "Admin User",
+      "userRole": "ADMIN",
+      "isDisable": false,
+      "passwordHash": "5e884898da28047151d0e56f8dc6292773603d0d6aabbdd62a11ef721d1542d8"
+    },
+    {
+      "user_id": 2,
+      "email": "landlord@example.com",
+      "displayName": "Test Landlord",
+      "userRole": "LANDLORD",
+      "isDisable": false,
+      "passwordHash": "ef797c8118f02dfb649607dd5d3f8c7623048c9c063d532cc95c5ed7a898a64f"
+    },
+    {
+      "user_id": 3,
+      "email": "tenant@example.com",
+      "displayName": "Test Tenant",
+      "userRole": "TENANT",
+      "isDisable": false,
+      "passwordHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "user_id": 4,
+      "email": "disabled@example.com",
+      "displayName": "Disabled User",
+      "userRole": "LANDLORD",
+      "isDisable": true,
+      "passwordHash": "abc123"
+    }
+  ],
+  "testCredentials": {
+    "admin": {
+      "email": "admin@rentwise.com",
+      "password": "Admin123",
+      "passwordHash": "5e884898da28047151d0e56f8dc6292773603d0d6aabbdd62a11ef721d1542d8"
+    },
+    "landlord": {
+      "email": "landlord@example.com",
+      "password": "LandLord123",
+      "passwordHash": "ef797c8118f02dfb649607dd5d3f8c7623048c9c063d532cc95c5ed7a898a64f"
+    },
+    "tenant": {
+      "email": "tenant@example.com",
+      "password": "Tenant123",
+      "passwordHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  }
+}
