@@ -6,7 +6,12 @@
   "scripts": {
     "start": "nodemon app.js",
     "dev": "nodemon app.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "jest --config tests/jest.config.js",
+    "test:coverage": "jest --config tests/jest.config.js --coverage",
+    "test:watch": "jest --config tests/jest.config.js --watch",
+    "test:unit": "jest --config tests/jest.config.js tests/unit",
+    "test:integration": "jest --config tests/jest.config.js tests/integration",
+    "test:verbose": "jest --config tests/jest.config.js --verbose"
   },
   "keywords": [],
   "author": "",
@@ -26,5 +31,10 @@
     "nodemailer": "^7.0.9",
     "nodemon": "^3.1.10",
     "redis": "^4.6.7"
+  },
+  "devDependencies": {
+    "jest": "^30.2.0",
+    "jest-html-reporters": "^3.1.7",
+    "supertest": "^7.1.4"
   }
 }
