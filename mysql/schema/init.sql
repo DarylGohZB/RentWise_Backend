@@ -23,17 +23,17 @@ CREATE TABLE IF NOT EXISTS users (
 
 # Admin user
 INSERT INTO users (displayName, email, passwordHash, userRole)
-VALUES ('admin', 'admin@gmail.com', SHA2('password', 256), 'ADMIN');
+VALUES ('admin', 'admin@gmail.com', SHA2('password123', 256), 'ADMIN');
 
 # Sample landlords
 INSERT INTO users (displayName, email, passwordHash, registeredDateTime)
 VALUES
-('Alice Tan', 'alice@example.com', SHA2('alice123', 256), NOW()), -- today
-('Ben Lee', 'ben@example.com', SHA2('ben123', 256), DATE_SUB(NOW(), INTERVAL 2 DAY)),
-('Cynthia Goh', 'cynthia@example.com', SHA2('cynthia123', 256), DATE_SUB(NOW(), INTERVAL 6 DAY)),
-('Daniel Ho', 'daniel@example.com', SHA2('daniel123', 256), DATE_SUB(NOW(), INTERVAL 10 DAY)), -- last week
-('Elena Lim', 'elena@example.com', SHA2('elena123', 256), DATE_SUB(NOW(), INTERVAL 14 DAY)),
-('Faris Wong', 'faris@example.com', SHA2('faris123', 256), DATE_SUB(NOW(), INTERVAL 21 DAY));
+('Alice Tan', 'alice@example.com', SHA2('password123', 256), NOW()), -- today
+('Ben Lee', 'ben@example.com', SHA2('password123', 256), DATE_SUB(NOW(), INTERVAL 2 DAY)),
+('Cynthia Goh', 'cynthia@example.com', SHA2('password123', 256), DATE_SUB(NOW(), INTERVAL 6 DAY)),
+('Daniel Ho', 'daniel@example.com', SHA2('password123', 256), DATE_SUB(NOW(), INTERVAL 10 DAY)), -- last week
+('Elena Lim', 'elena@example.com', SHA2('password123', 256), DATE_SUB(NOW(), INTERVAL 14 DAY)),
+('Faris Wong', 'faris@example.com', SHA2('password123', 256), DATE_SUB(NOW(), INTERVAL 21 DAY));
 
 # Listings Table
 CREATE TABLE IF NOT EXISTS listings (
