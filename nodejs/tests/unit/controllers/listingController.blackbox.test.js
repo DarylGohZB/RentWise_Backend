@@ -29,13 +29,13 @@ describe('ListingController - CreateListing (Black Box Testing)', () => {
    * Expected: 201 Created, status active
    */
   test('BBT-LIST-001: Valid listing should return 201', async () => {
-    mapService.getTownFromPostalCode.mockResolvedValue('Bishan');
+    mapService.checkTownByPostalCode.mockResolvedValue('Bishan');
     
     listingService.createListing.mockResolvedValue({
       ok: true,
       status: 201,
       listingId: 42,
-      listingStatus: 'active'
+      status: 'active'
     });
 
     const req = {
@@ -51,7 +51,7 @@ describe('ListingController - CreateListing (Black Box Testing)', () => {
     const result = await listingController.createListing(req);
 
     expect(result.status).toBe(201);
-    expect(result.body.listingStatus).toBe('active');
+    expect(result.body.status).toBe('active');
   });
 
   /**
@@ -59,7 +59,7 @@ describe('ListingController - CreateListing (Black Box Testing)', () => {
    * Expected: 400 Bad Request
    */
   test('BBT-LIST-002: Invalid postal code should return 400', async () => {
-    mapService.getTownFromPostalCode.mockResolvedValue(null);
+    mapService.checkTownByPostalCode.mockResolvedValue(null);
 
     const req = {
       user: { id: 5 },
@@ -82,13 +82,13 @@ describe('ListingController - CreateListing (Black Box Testing)', () => {
    * Expected: 201 Created, pending_review
    */
   test('BBT-LIST-003: Price too low should return 201 with pending_review', async () => {
-    mapService.getTownFromPostalCode.mockResolvedValue('Bishan');
+    mapService.checkTownByPostalCode.mockResolvedValue('Bishan');
     
     listingService.createListing.mockResolvedValue({
       ok: true,
       status: 201,
       listingId: 43,
-      listingStatus: 'pending_review'
+      status: 'pending_review'
     });
 
     const req = {
@@ -104,7 +104,7 @@ describe('ListingController - CreateListing (Black Box Testing)', () => {
     const result = await listingController.createListing(req);
 
     expect(result.status).toBe(201);
-    expect(result.body.listingStatus).toBe('pending_review');
+    expect(result.body.status).toBe('pending_review');
   });
 
   /**
@@ -112,13 +112,13 @@ describe('ListingController - CreateListing (Black Box Testing)', () => {
    * Expected: 201 Created, pending_review
    */
   test('BBT-LIST-004: Price too high should return 201 with pending_review', async () => {
-    mapService.getTownFromPostalCode.mockResolvedValue('Bishan');
+    mapService.checkTownByPostalCode.mockResolvedValue('Bishan');
     
     listingService.createListing.mockResolvedValue({
       ok: true,
       status: 201,
       listingId: 44,
-      listingStatus: 'pending_review'
+      status: 'pending_review'
     });
 
     const req = {
@@ -134,7 +134,7 @@ describe('ListingController - CreateListing (Black Box Testing)', () => {
     const result = await listingController.createListing(req);
 
     expect(result.status).toBe(201);
-    expect(result.body.listingStatus).toBe('pending_review');
+    expect(result.body.status).toBe('pending_review');
   });
 
   /**
@@ -142,13 +142,13 @@ describe('ListingController - CreateListing (Black Box Testing)', () => {
    * Expected: 201 Created, active
    */
   test('BBT-LIST-005: Normal price should return 201 with active status', async () => {
-    mapService.getTownFromPostalCode.mockResolvedValue('Bishan');
+    mapService.checkTownByPostalCode.mockResolvedValue('Bishan');
     
     listingService.createListing.mockResolvedValue({
       ok: true,
       status: 201,
       listingId: 45,
-      listingStatus: 'active'
+      status: 'active'
     });
 
     const req = {
@@ -164,7 +164,7 @@ describe('ListingController - CreateListing (Black Box Testing)', () => {
     const result = await listingController.createListing(req);
 
     expect(result.status).toBe(201);
-    expect(result.body.listingStatus).toBe('active');
+    expect(result.body.status).toBe('active');
   });
 
   /**
@@ -172,13 +172,13 @@ describe('ListingController - CreateListing (Black Box Testing)', () => {
    * Expected: 201 Created, active
    */
   test('BBT-LIST-006: Boundary low price ($500) should return 201 active', async () => {
-    mapService.getTownFromPostalCode.mockResolvedValue('Bishan');
+    mapService.checkTownByPostalCode.mockResolvedValue('Bishan');
     
     listingService.createListing.mockResolvedValue({
       ok: true,
       status: 201,
       listingId: 46,
-      listingStatus: 'active'
+      status: 'active'
     });
 
     const req = {
@@ -194,7 +194,7 @@ describe('ListingController - CreateListing (Black Box Testing)', () => {
     const result = await listingController.createListing(req);
 
     expect(result.status).toBe(201);
-    expect(result.body.listingStatus).toBe('active');
+    expect(result.body.status).toBe('active');
   });
 
   /**
@@ -202,13 +202,13 @@ describe('ListingController - CreateListing (Black Box Testing)', () => {
    * Expected: 201 Created, active
    */
   test('BBT-LIST-007: Boundary high price ($5000) should return 201 active', async () => {
-    mapService.getTownFromPostalCode.mockResolvedValue('Bishan');
+    mapService.checkTownByPostalCode.mockResolvedValue('Bishan');
     
     listingService.createListing.mockResolvedValue({
       ok: true,
       status: 201,
       listingId: 47,
-      listingStatus: 'active'
+      status: 'active'
     });
 
     const req = {
@@ -224,7 +224,7 @@ describe('ListingController - CreateListing (Black Box Testing)', () => {
     const result = await listingController.createListing(req);
 
     expect(result.status).toBe(201);
-    expect(result.body.listingStatus).toBe('active');
+    expect(result.body.status).toBe('active');
   });
 
   /**
@@ -232,13 +232,13 @@ describe('ListingController - CreateListing (Black Box Testing)', () => {
    * Expected: 201 Created
    */
   test('BBT-LIST-008: Maximum 5 images should be accepted', async () => {
-    mapService.getTownFromPostalCode.mockResolvedValue('Bishan');
+    mapService.checkTownByPostalCode.mockResolvedValue('Bishan');
     
     listingService.createListing.mockResolvedValue({
       ok: true,
       status: 201,
       listingId: 48,
-      listingStatus: 'active'
+      status: 'active'
     });
 
     const req = {
@@ -261,7 +261,7 @@ describe('ListingController - CreateListing (Black Box Testing)', () => {
    * Expected: 400 Bad Request
    */
   test('BBT-LIST-009: More than 5 images should return 400', async () => {
-    mapService.getTownFromPostalCode.mockResolvedValue('Bishan');
+    mapService.checkTownByPostalCode.mockResolvedValue('Bishan');
     
     listingService.createListing.mockResolvedValue({
       ok: false,
@@ -290,7 +290,7 @@ describe('ListingController - CreateListing (Black Box Testing)', () => {
    * Expected: 400 Bad Request
    */
   test('BBT-LIST-010: Invalid room type should return 400', async () => {
-    mapService.getTownFromPostalCode.mockResolvedValue('Bishan');
+    mapService.checkTownByPostalCode.mockResolvedValue('Bishan');
     
     listingService.createListing.mockResolvedValue({
       ok: false,
