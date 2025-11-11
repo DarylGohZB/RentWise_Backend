@@ -9,8 +9,8 @@ python3 generate_env.py
 ```
 docker compose up -d --build
 ```
-4.5. Rerun the above command each time you make edits.
-5. Done ez clap, by default mysql on port 3306, nodejs default 3000 (changable in env)
+5. Rerun the above command each time you make edits so that docker can update images.
+6. By default mysql on port 3306, nodejs default 3000 (changable in .env). [remember to turn off external services or change assignment in .env, if not port conflict will occur]
 
 ## Government Housing Data: Sync and Search
 
